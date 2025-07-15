@@ -100,7 +100,7 @@ jobs:
         echo "EOF" >> $env:GITHUB_OUTPUT
     
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.version.outputs.tag }}
         name: Grasshopper MCP Component v${{ steps.version.outputs.version }}

@@ -918,7 +918,7 @@ namespace GrasshopperMCP.Commands
                 if (component is IGH_Component ghComponent)
                 {
                     // Get component messages
-                    var componentMessages = ghComponent.RuntimeMessages;
+                    var componentMessages = ghComponent.RuntimeMessages(GH_RuntimeMessageLevel.Warning);
                     if (componentMessages != null && componentMessages.Count > 0)
                     {
                         foreach (var message in componentMessages)
@@ -926,9 +926,26 @@ namespace GrasshopperMCP.Commands
                             messages.Add(new Dictionary<string, object>
                             {
                                 { "component", componentInfo },
-                                { "level", message.Type.ToString() },
-                                { "text", message.Text },
-                                { "description", message.Description },
+                                { "level", "Warning" },
+                                { "text", message },
+                                { "description", "Component warning message" },
+                                { "source", "component" }
+                            });
+                        }
+                    }
+                    
+                    // Check for error messages
+                    var errorMessages = ghComponent.RuntimeMessages(GH_RuntimeMessageLevel.Error);
+                    if (errorMessages != null && errorMessages.Count > 0)
+                    {
+                        foreach (var message in errorMessages)
+                        {
+                            messages.Add(new Dictionary<string, object>
+                            {
+                                { "component", componentInfo },
+                                { "level", "Error" },
+                                { "text", message },
+                                { "description", "Component error message" },
                                 { "source", "component" }
                             });
                         }
@@ -937,7 +954,7 @@ namespace GrasshopperMCP.Commands
                     // Check input parameters for warnings
                     foreach (var inputParam in ghComponent.Params.Input)
                     {
-                        var paramMessages = inputParam.RuntimeMessages;
+                        var paramMessages = inputParam.RuntimeMessages(GH_RuntimeMessageLevel.Warning);
                         if (paramMessages != null && paramMessages.Count > 0)
                         {
                             foreach (var message in paramMessages)
@@ -952,9 +969,33 @@ namespace GrasshopperMCP.Commands
                                             { "type", "input" }
                                         }
                                     },
-                                    { "level", message.Type.ToString() },
-                                    { "text", message.Text },
-                                    { "description", message.Description },
+                                    { "level", "Warning" },
+                                    { "text", message },
+                                    { "description", "Parameter warning message" },
+                                    { "source", "parameter" }
+                                });
+                            }
+                        }
+                        
+                        // Check for parameter error messages
+                        var paramErrorMessages = inputParam.RuntimeMessages(GH_RuntimeMessageLevel.Error);
+                        if (paramErrorMessages != null && paramErrorMessages.Count > 0)
+                        {
+                            foreach (var message in paramErrorMessages)
+                            {
+                                messages.Add(new Dictionary<string, object>
+                                {
+                                    { "component", componentInfo },
+                                    { "parameter", new Dictionary<string, object>
+                                        {
+                                            { "name", inputParam.Name },
+                                            { "nickname", inputParam.NickName },
+                                            { "type", "input" }
+                                        }
+                                    },
+                                    { "level", "Error" },
+                                    { "text", message },
+                                    { "description", "Parameter error message" },
                                     { "source", "parameter" }
                                 });
                             }
@@ -982,7 +1023,7 @@ namespace GrasshopperMCP.Commands
                     // Check output parameters for warnings
                     foreach (var outputParam in ghComponent.Params.Output)
                     {
-                        var paramMessages = outputParam.RuntimeMessages;
+                        var paramMessages = outputParam.RuntimeMessages(GH_RuntimeMessageLevel.Warning);
                         if (paramMessages != null && paramMessages.Count > 0)
                         {
                             foreach (var message in paramMessages)
@@ -997,9 +1038,33 @@ namespace GrasshopperMCP.Commands
                                             { "type", "output" }
                                         }
                                     },
-                                    { "level", message.Type.ToString() },
-                                    { "text", message.Text },
-                                    { "description", message.Description },
+                                    { "level", "Warning" },
+                                    { "text", message },
+                                    { "description", "Parameter warning message" },
+                                    { "source", "parameter" }
+                                });
+                            }
+                        }
+                        
+                        // Check for output parameter error messages
+                        var paramErrorMessages = outputParam.RuntimeMessages(GH_RuntimeMessageLevel.Error);
+                        if (paramErrorMessages != null && paramErrorMessages.Count > 0)
+                        {
+                            foreach (var message in paramErrorMessages)
+                            {
+                                messages.Add(new Dictionary<string, object>
+                                {
+                                    { "component", componentInfo },
+                                    { "parameter", new Dictionary<string, object>
+                                        {
+                                            { "name", outputParam.Name },
+                                            { "nickname", outputParam.NickName },
+                                            { "type", "output" }
+                                        }
+                                    },
+                                    { "level", "Error" },
+                                    { "text", message },
+                                    { "description", "Parameter error message" },
                                     { "source", "parameter" }
                                 });
                             }

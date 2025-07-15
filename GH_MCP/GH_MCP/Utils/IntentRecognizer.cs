@@ -96,6 +96,26 @@ namespace GH_MCP.Utils
             return null;
         }
 
+        public static List<string> GetAllPatternNames()
+        {
+            if (_knowledgeBase == null)
+            {
+                Initialize();
+            }
+
+            var patternNames = new List<string>();
+
+            if (_knowledgeBase["patterns"] != null)
+            {
+                foreach (var pattern in _knowledgeBase["patterns"])
+                {
+                    patternNames.Add(pattern["name"].ToString());
+                }
+            }
+
+            return patternNames;
+        }
+
         /// <summary>
         /// Get components and connections for specified pattern
         /// </summary>

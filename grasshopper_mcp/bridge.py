@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 # Set Grasshopper MCP connection parameters
 GRASSHOPPER_HOST = "localhost"
-GRASSHOPPER_PORT = 8080  # Default port, can be changed as needed
+GRASSHOPPER_PORT = int(os.environ.get("GRASSHOPPER_PORT", 8080))
 
 # Create MCP server
 server = FastMCP("Grasshopper Bridge")
@@ -41,151 +41,10 @@ class ValidationError(MCPError):
     pass
 
 def validate_component_type(component_type: str) -> str:
-    """Validate and normalize component type"""
-    valid_types = {
-        # Various possible inputs for Number Slider
-        "number slider": "Number Slider",
-        "numeric slider": "Number Slider",
-        "num slider": "Number Slider",
-        "slider": "Number Slider",
-        
-        # Standardized names for other components
-        "md slider": "MD Slider",
-        "multidimensional slider": "MD Slider",
-        "multi-dimensional slider": "MD Slider",
-        "graph mapper": "Graph Mapper",
-        
-        # Additional components
-        "divide curve": "Divide Curve",
-        "divide": "Divide Curve",
-        "curve division": "Divide Curve",
-        "range": "Range",
-        "numeric range": "Range",
-        "number range": "Range",
-        "amplitude": "Amplitude",
-        "vector length": "Amplitude",
-        "vector amplitude": "Amplitude",
-        "move": "Move",
-        "translate": "Move",
-        "translation": "Move",
-        "interpolate": "Interpolate",
-        "interpolation": "Interpolate",
-        "curve interpolation": "Interpolate",
-        "pipe": "Pipe",
-        "tube": "Pipe",
-        "cylinder": "Pipe",
-        
-        # Math operation components
-        "add": "Addition",
-        "addition": "Addition",
-        "plus": "Addition",
-        "sum": "Addition",
-        "subtract": "Subtraction",
-        "subtraction": "Subtraction",
-        "minus": "Subtraction",
-        "difference": "Subtraction",
-        "multiply": "Multiplication",
-        "multiplication": "Multiplication",
-        "times": "Multiplication",
-        "product": "Multiplication",
-        "divide": "Division",
-        "division": "Division",
-        
-        # Data management components
-        "list item": "List Item",
-        "listitem": "List Item",
-        "item": "List Item",
-        "cull pattern": "Cull Pattern",
-        "cullpattern": "Cull Pattern",
-        "cull": "Cull Pattern",
-        "graft": "Graft",
-        "flatten": "Flatten",
-        "series": "Series",
-        "dispatch": "Dispatch",
-        "shift list": "Shift List",
-        "shiftlist": "Shift List",
-        "flip matrix": "Flip Matrix",
-        "flipmatrix": "Flip Matrix",
-        
-        # Geometry creation components
-        "ellipse": "Ellipse",
-        "polygon": "Polygon",
-        
-        # Curve operation components
-        "offset": "Offset",
-        "shatter": "Shatter",
-        "join curves": "Join Curves",
-        "joincurves": "Join Curves",
-        "polyline": "Polyline",
-        "arc": "Arc",
-        "arc sed": "Arc SED",
-        "arcsed": "Arc SED",
-        "evaluate curve": "Evaluate Curve",
-        "evaluatecurve": "Evaluate Curve",
-        "eval curve": "Evaluate Curve",
-        "point on curve": "Point On Curve",
-        "pointoncurve": "Point On Curve",
-        "pt on curve": "Point On Curve",
-        "fillet": "Fillet",
-        "trim": "Trim",
-        
-        # Number operation components
-        "remap numbers": "Remap Numbers",
-        "remapnumbers": "Remap Numbers",
-        "remap": "Remap Numbers",
-        
-        # Surface operation components
-        "loft": "Loft",
-        "sweep1": "Sweep1",
-        "sweep 1": "Sweep1",
-        "sweep2": "Sweep2",
-        "sweep 2": "Sweep2",
-        "revolve": "Revolve",
-        "cap holes": "Cap Holes",
-        "capholes": "Cap Holes",
-        "offset surface": "Offset Surface",
-        "offsetsurface": "Offset Surface",
-        
-        # Transform operation components
-        "rotate": "Rotate",
-        "mirror": "Mirror",
-        "scale": "Scale",
-        "orient": "Orient",
-        
-        # Analysis operation components
-        "bounding box": "Bounding Box",
-        "boundingbox": "Bounding Box",
-        "bbox": "Bounding Box",
-        "area": "Area",
-        "volume": "Volume",
-        "center box": "Center Box",
-        "centerbox": "Center Box",
-        
-        # Curve operations
-        "offset curve": "Offset",
-        "offsetcurve": "Offset",
-        "polyline": "Polyline",
-        "poly line": "Polyline",
-        
-        # Surface operations
-        "loft": "Loft",
-        
-        # Transformation operations
-        "rotate": "Rotate",
-        
-        # Output components
-        "panel": "Panel",
-        "text panel": "Panel",
-        "output panel": "Panel",
-        "display": "Panel"
-    }
-    
-    normalized_type = component_type.lower()
-    if normalized_type in valid_types:
-        logger.info(f"Component type normalized from '{normalized_type}' to '{valid_types[normalized_type]}'")
-        return valid_types[normalized_type]
-    
-    # If not in mapping, assume it's already a valid component name
+    """Pass-through for component type, validation is handled by C#"""
+    if not isinstance(component_type, str) or not component_type.strip():
+        raise ValidationError("Component type must be a non-empty string.")
+    logger.info(f"Component type '{component_type}' sent to GH for validation.")
     return component_type
 
 def validate_coordinates(x: float, y: float) -> None:

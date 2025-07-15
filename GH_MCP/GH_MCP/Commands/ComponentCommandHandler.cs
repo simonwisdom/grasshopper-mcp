@@ -19,6 +19,8 @@ namespace GrasshopperMCP.Commands
     /// </summary>
     public static class ComponentCommandHandler
     {
+        private static bool _loggedComponentTypes = false;
+
         /// <summary>
         /// Add component
         /// </summary>
@@ -60,8 +62,7 @@ namespace GrasshopperMCP.Commands
                     IGH_DocumentObject component = null;
                     
                     // Log available component types (only on first call)
-                    bool loggedComponentTypes = false;
-                    if (!loggedComponentTypes)
+                    if (!_loggedComponentTypes)
                     {
                         var availableTypes = Grasshopper.Instances.ComponentServer.ObjectProxies
                             .Select(p => p.Desc.Name)
@@ -69,290 +70,63 @@ namespace GrasshopperMCP.Commands
                             .ToList();
                         
                         RhinoApp.WriteLine($"Available component types: {string.Join(", ", availableTypes.Take(50))}...");
-                        loggedComponentTypes = true;
+                        _loggedComponentTypes = true;
                     }
                     
-                    // Create different components based on type
-                    switch (normalizedType.ToLowerInvariant())
+                    // Create component dynamically
+                    component = CreateComponentByName(normalizedType);
+                    if (component == null)
                     {
-                        // Plane components
-                        case "xy plane":
-                            component = CreateComponentByName("XY Plane");
-                            break;
-                        case "xz plane":
-                            component = CreateComponentByName("XZ Plane");
-                            break;
-                        case "yz plane":
-                            component = CreateComponentByName("YZ Plane");
-                            break;
-                        case "plane 3pt":
-                            component = CreateComponentByName("Plane 3Pt");
-                            break;
-                            
-                        // Basic geometry components
-                        case "box":
-                            component = CreateComponentByName("Box");
-                            break;
-                        case "sphere":
-                            component = CreateComponentByName("Sphere");
-                            break;
-                        case "cylinder":
-                            component = CreateComponentByName("Cylinder");
-                            break;
-                        case "cone":
-                            component = CreateComponentByName("Cone");
-                            break;
-                        case "circle":
-                            component = CreateComponentByName("Circle");
-                            break;
-                        case "rectangle":
-                            component = CreateComponentByName("Rectangle");
-                            break;
-                        case "line":
-                            component = CreateComponentByName("Line");
-                            break;
-                            
-                        // Parameter components
-                        case "point":
-                        case "pt":
-                        case "pointparam":
-                        case "param_point":
-                            component = new Param_Point();
-                            break;
-                        case "circleparam":
-                        case "param_circle":
-                            component = new Param_Circle();
-                            break;
-                        case "lineparam":
-                        case "param_line":
-                            component = new Param_Line();
-                            break;
-                        case "panel":
-                        case "gh_panel":
-                            component = new GH_Panel();
-                            break;
-                        case "slider":
-                        case "numberslider":
-                        case "gh_numberslider":
-                            var slider = new GH_NumberSlider();
-                            slider.SetInitCode("0.0 < 0.5 < 1.0");
-                            component = slider;
-                            break;
-                        case "number":
-                        case "num":
-                        case "integer":
-                        case "int":
-                        case "param_number":
-                        case "param_integer":
-                            component = new Param_Number();
-                            break;
-                        case "construct point":
-                        case "constructpoint":
-                        case "pt xyz":
-                        case "xyz":
-                            // Try to find construct point component
-                            var pointProxy = Grasshopper.Instances.ComponentServer.ObjectProxies
-                                .FirstOrDefault(p => p.Desc.Name.Equals("Construct Point", StringComparison.OrdinalIgnoreCase));
-                            if (pointProxy != null)
-                            {
-                                component = pointProxy.CreateInstance();
-                            }
-                            else
-                            {
-                                throw new ArgumentException("Construct Point component not found");
-                            }
-                            break;
-                            
-                        // Data management components
-                        case "list item":
-                        case "listitem":
-                        case "item":
-                            component = CreateComponentByName("List Item");
-                            break;
-                        case "cull pattern":
-                        case "cullpattern":
-                        case "cull":
-                            component = CreateComponentByName("Cull Pattern");
-                            break;
-                        case "graft":
-                            component = CreateComponentByName("Graft");
-                            break;
-                        case "flatten":
-                            component = CreateComponentByName("Flatten");
-                            break;
-                        case "series":
-                            component = CreateComponentByName("Series");
-                            break;
-                            
-                        // Additional curve components
-                        case "polyline":
-                        case "poly line":
-                            component = CreateComponentByName("Polyline");
-                            break;
-                        case "curve":
-                        case "crv":
-                        case "curveparam":
-                        case "param_curve":
-                            component = new Param_Curve();
-                            break;
-                            
-                        // Additional geometry components
-                        case "ellipse":
-                            component = CreateComponentByName("Ellipse");
-                            break;
-                        case "polygon":
-                            component = CreateComponentByName("Polygon");
-                            break;
-                        case "arc":
-                            component = CreateComponentByName("Arc");
-                            break;
-                        case "arc sed":
-                        case "arcsed":
-                            component = CreateComponentByName("Arc SED");
-                            break;
-                            
-                        // Curve evaluation components
-                        case "evaluate curve":
-                        case "evaluatecurve":
-                        case "eval curve":
-                            component = CreateComponentByName("Evaluate Curve");
-                            break;
-                        case "point on curve":
-                        case "pointoncurve":
-                        case "pt on curve":
-                            component = CreateComponentByName("Point On Curve");
-                            break;
-                            
-                        // Number operations
-                        case "remap numbers":
-                        case "remapnumbers":
-                        case "remap":
-                            component = CreateComponentByName("Remap Numbers");
-                            break;
-                            
-                        // Surface operations
-                        case "sweep1":
-                        case "sweep 1":
-                            component = CreateComponentByName("Sweep1");
-                            break;
-                        case "sweep2":
-                        case "sweep 2":
-                            component = CreateComponentByName("Sweep2");
-                            break;
-                        case "revolve":
-                            component = CreateComponentByName("Revolve");
-                            break;
-                        case "cap holes":
-                        case "capholes":
-                            component = CreateComponentByName("Cap Holes");
-                            break;
-                        case "offset surface":
-                        case "offsetsurface":
-                            component = CreateComponentByName("Offset Surface");
-                            break;
-                            
-                        // Curve operations
-                        case "fillet":
-                            component = CreateComponentByName("Fillet");
-                            break;
-                        case "trim":
-                            component = CreateComponentByName("Trim");
-                            break;
-                            
-                        // Transform operations
-                        case "mirror":
-                            component = CreateComponentByName("Mirror");
-                            break;
-                        case "scale":
-                            component = CreateComponentByName("Scale");
-                            break;
-                        case "orient":
-                            component = CreateComponentByName("Orient");
-                            break;
-                            
-                        // Analysis operations
-                        case "bounding box":
-                        case "boundingbox":
-                        case "bbox":
-                            component = CreateComponentByName("Bounding Box");
-                            break;
-                        case "area":
-                            component = CreateComponentByName("Area");
-                            break;
-                        case "volume":
-                            component = CreateComponentByName("Volume");
-                            break;
-                        case "center box":
-                        case "centerbox":
-                            component = CreateComponentByName("Center Box");
-                            break;
-                            
-                        // Data management
-                        case "dispatch":
-                            component = CreateComponentByName("Dispatch");
-                            break;
-                        case "shift list":
-                        case "shiftlist":
-                            component = CreateComponentByName("Shift List");
-                            break;
-                        case "flip matrix":
-                        case "flipmatrix":
-                            component = CreateComponentByName("Flip Matrix");
-                            break;
-                        default:
-                            // Try to find component by GUID
-                            Guid componentGuid;
-                            if (Guid.TryParse(type, out componentGuid))
-                            {
-                                component = Grasshopper.Instances.ComponentServer.EmitObject(componentGuid);
-                                RhinoApp.WriteLine($"Attempting to create component by GUID: {componentGuid}");
-                            }
-                            
-                            if (component == null)
-                            {
-                                // Try to find component by name (case-insensitive)
-                                RhinoApp.WriteLine($"Attempting to find component by name: {type}");
-                                var obj = Grasshopper.Instances.ComponentServer.ObjectProxies
-                                    .FirstOrDefault(p => p.Desc.Name.Equals(type, StringComparison.OrdinalIgnoreCase));
-                                    
-                                if (obj != null)
-                                {
-                                    RhinoApp.WriteLine($"Found component: {obj.Desc.Name}");
-                                    component = obj.CreateInstance();
-                                }
-                                else
-                                {
-                                    // Try partial name matching
-                                    RhinoApp.WriteLine($"Attempting to find component by partial name match: {type}");
-                                    obj = Grasshopper.Instances.ComponentServer.ObjectProxies
-                                        .FirstOrDefault(p => p.Desc.Name.IndexOf(type, StringComparison.OrdinalIgnoreCase) >= 0);
-                                        
-                                    if (obj != null)
-                                    {
-                                        RhinoApp.WriteLine($"Found component by partial match: {obj.Desc.Name}");
-                                        component = obj.CreateInstance();
-                                    }
-                                }
-                            }
-                            
-                            if (component == null)
-                            {
-                                // Log some possible component types
-                                var possibleMatches = Grasshopper.Instances.ComponentServer.ObjectProxies
-                                    .Where(p => p.Desc.Name.IndexOf(type, StringComparison.OrdinalIgnoreCase) >= 0)
-                                    .Select(p => p.Desc.Name)
-                                    .Take(10)
-                                    .ToList();
-                                
-                                var errorMessage = $"Unknown component type: {type}";
-                                if (possibleMatches.Any())
-                                {
-                                    errorMessage += $". Possible matches: {string.Join(", ", possibleMatches)}";
-                                }
-                                
-                                throw new ArgumentException(errorMessage);
-                            }
-                            break;
+                        // Fallback for special cases or components not found by name
+                        switch (normalizedType.ToLowerInvariant())
+                        {
+                            case "point":
+                            case "pt":
+                            case "pointparam":
+                            case "param_point":
+                                component = new Param_Point();
+                                break;
+                            case "circleparam":
+                            case "param_circle":
+                                component = new Param_Circle();
+                                break;
+                            case "lineparam":
+                            case "param_line":
+                                component = new Param_Line();
+                                break;
+                            case "panel":
+                            case "gh_panel":
+                                component = new GH_Panel();
+                                break;
+                            case "slider":
+                            case "numberslider":
+                            case "gh_numberslider":
+                                var slider = new GH_NumberSlider();
+                                slider.SetInitCode("0.0 < 0.5 < 1.0");
+                                component = slider;
+                                break;
+                            case "number":
+                            case "num":
+                            case "integer":
+                            case "int":
+                            case "param_number":
+                            case "param_integer":
+                                component = new Param_Number();
+                                break;
+                            case "curve":
+                            case "crv":
+                            case "curveparam":
+                            case "param_curve":
+                                component = new Param_Curve();
+                                break;
+                            default:
+                                throw new ArgumentException($"Component type '{normalizedType}' not found or could not be created.");
+                        }
+                    }
+
+                    if (component == null)
+                    {
+                        throw new InvalidOperationException($"Failed to create component of type '{normalizedType}'");
                     }
                     
                     // Set component position
@@ -588,10 +362,15 @@ namespace GrasshopperMCP.Commands
                     }
                     else if (component is GH_NumberSlider slider)
                     {
-                        double doubleValue;
-                        if (double.TryParse(value, out doubleValue))
+                        if (double.TryParse(value, out double number))
                         {
-                            slider.SetSliderValue((decimal)doubleValue);
+                            // Ensure the value is within the slider's range
+                            if (number < (double)slider.Slider.Minimum)
+                                number = (double)slider.Slider.Minimum;
+                            if (number > (double)slider.Slider.Maximum)
+                                number = (double)slider.Slider.Maximum;
+                            
+                            slider.SetSliderValue((decimal)number);
                         }
                         else
                         {
@@ -705,7 +484,7 @@ namespace GrasshopperMCP.Commands
                     var doc = Grasshopper.Instances.ActiveCanvas?.Document;
                     if (doc == null)
                     {
-                        throw new InvalidOperationException("No active Grasshopper document");
+                        throw new InvalidOperationException("No active Grasshopper document found.");
                     }
                     
                     // Convert string ID to GUID
@@ -826,7 +605,7 @@ namespace GrasshopperMCP.Commands
                     var doc = Grasshopper.Instances.ActiveCanvas?.Document;
                     if (doc == null)
                     {
-                        throw new InvalidOperationException("No active Grasshopper document");
+                        throw new InvalidOperationException("No active Grasshopper document found.");
                     }
                     
                     var warnings = new List<Dictionary<string, object>>();
@@ -1145,7 +924,7 @@ namespace GrasshopperMCP.Commands
                     var doc = Grasshopper.Instances.ActiveCanvas?.Document;
                     if (doc == null)
                     {
-                        throw new InvalidOperationException("No active Grasshopper document");
+                        throw new InvalidOperationException("No active Grasshopper document found.");
                     }
                     
                     // Collect all components
@@ -1225,7 +1004,7 @@ namespace GrasshopperMCP.Commands
                     var doc = Grasshopper.Instances.ActiveCanvas?.Document;
                     if (doc == null)
                     {
-                        throw new InvalidOperationException("No active Grasshopper document");
+                        throw new InvalidOperationException("No active Grasshopper document found.");
                     }
                     
                     // Collect all connections

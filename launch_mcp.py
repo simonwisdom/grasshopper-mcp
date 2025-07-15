@@ -20,6 +20,9 @@ class Colors:
     BLUE = '\033[0;34m'
     NC = '\033[0m'  # No Color
 
+# Constants
+DEFAULT_PORT = 8080
+
 def log_info(message: str) -> None:
     """Log info message with color"""
     print(f"{Colors.BLUE}[INFO]{Colors.NC} {message}", file=sys.stderr)
@@ -164,38 +167,38 @@ except Exception as e:
     
     def check_server_status(self) -> None:
         """Check if Grasshopper is ready to accept connections"""
-        log_info("Checking if Grasshopper is ready on port 8080...")
+        log_info(f"Checking if Grasshopper is ready on port {DEFAULT_PORT}...")
         
         try:
             import socket
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(1)
-            result = sock.connect_ex(('localhost', 8080))
+            result = sock.connect_ex(('localhost', DEFAULT_PORT))
             sock.close()
             
             if result == 0:
                 # Port is in use, let's check what's running on it
-                process_info = self._get_process_on_port(8080)
+                process_info = self._get_process_on_port(DEFAULT_PORT)
                 if process_info:
                     if self._is_grasshopper_process(process_info):
-                        log_success(f"Grasshopper is ready and listening on port 8080 (PID: {process_info['pid']})")
+                        log_success(f"Grasshopper is ready and listening on port {DEFAULT_PORT} (PID: {process_info['pid']})")
                     else:
-                        log_warning(f"Port 8080 is in use by: {process_info['name']} (PID: {process_info['pid']})")
+                        log_warning(f"Port {DEFAULT_PORT} is in use by: {process_info['name']} (PID: {process_info['pid']})")
                         log_warning("This might conflict with Grasshopper. Please ensure:")
                         log_warning("1. Rhino and Grasshopper are running")
                         log_warning("2. The GH_MCP component is added to your Grasshopper canvas")
-                        log_warning("3. The GH_MCP component is enabled and listening on port 8080")
+                        log_warning(f"3. The GH_MCP component is enabled and listening on port {DEFAULT_PORT}")
                         response = input("Continue anyway? (y/N): ").strip().lower()
                         if response not in ['y', 'yes']:
                             log_info("Exiting...")
                             sys.exit(0)
                 else:
-                    log_success("Port 8080 is responding (process info unavailable)")
+                    log_success(f"Port {DEFAULT_PORT} is responding (process info unavailable)")
             else:
-                log_warning("Port 8080 is not responding. Please ensure:")
+                log_warning(f"Port {DEFAULT_PORT} is not responding. Please ensure:")
                 log_warning("1. Rhino and Grasshopper are running")
                 log_warning("2. The GH_MCP component is added to your Grasshopper canvas")
-                log_warning("3. The GH_MCP component is enabled and listening on port 8080")
+                log_warning(f"3. The GH_MCP component is enabled and listening on port {DEFAULT_PORT}")
                 response = input("Continue anyway? (y/N): ").strip().lower()
                 if response not in ['y', 'yes']:
                     log_info("Exiting...")
@@ -236,7 +239,11 @@ except Exception as e:
         """Check if the process is likely to be Grasshopper/Rhino"""
         name = process_info['name'].lower()
         
-        # Common Grasshopper/Rhino process names (including macOS variants)
+        # On macOS, the main process is 'Rhino'.
+        if sys.platform == "darwin":
+            return 'rhino' in name
+
+        # Common Grasshopper/Rhino process names for other platforms
         grasshopper_names = [
             'rhino', 'rhinoceros', 'rhinocero', 'grasshopper', 'gh_mcp', 'mcp'
         ]

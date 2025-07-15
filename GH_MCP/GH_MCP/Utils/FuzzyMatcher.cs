@@ -190,7 +190,6 @@ namespace GH_MCP.Utils
             { "tolerance", "Tolerance" },
             { "angle", "Angle" },
             { "axis", "Axis" },
-            { "center", "Center" },
             { "vertices", "Vertices" },
             { "degree", "Degree" },
             { "periodic", "Periodic" },

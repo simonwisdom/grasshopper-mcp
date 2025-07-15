@@ -6,6 +6,7 @@ using Grasshopper.Kernel;
 using Rhino;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace GrasshopperMCP.Commands
 {
@@ -21,66 +22,41 @@ namespace GrasshopperMCP.Commands
         /// <returns>Document information</returns>
         public static object GetDocumentInfo(Command command)
         {
-            object result = null;
-            Exception exception = null;
+            var tcs = new TaskCompletionSource<object>();
             
-            // Execute on UI thread
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            RhinoApp.InvokeOnUiThread(() =>
             {
                 try
                 {
-                    // Get Grasshopper document
                     var doc = Grasshopper.Instances.ActiveCanvas?.Document;
                     if (doc == null)
                     {
-                        throw new InvalidOperationException("No active Grasshopper document");
+                        tcs.SetException(new InvalidOperationException("No active Grasshopper document"));
+                        return;
                     }
                     
-                    // Collect component information
-                    var components = new List<object>();
-                    foreach (var obj in doc.Objects)
+                    var components = doc.Objects.Select(obj => new
                     {
-                        var componentInfo = new Dictionary<string, object>
-                        {
-                            { "id", obj.InstanceGuid.ToString() },
-                            { "type", obj.GetType().Name },
-                            { "name", obj.NickName }
-                        };
-                        
-                        components.Add(componentInfo);
-                    }
+                        id = obj.InstanceGuid.ToString(),
+                        type = obj.GetType().Name,
+                        name = obj.NickName
+                    }).ToList();
                     
-                    // Collect document information
-                    var docInfo = new Dictionary<string, object>
+                    tcs.SetResult(new
                     {
-                        { "name", doc.DisplayName },
-                        { "path", doc.FilePath },
-                        { "componentCount", doc.Objects.Count },
-                        { "components", components }
-                    };
-                    
-                    result = docInfo;
+                        name = doc.DisplayName,
+                        path = doc.FilePath,
+                        componentCount = doc.Objects.Count,
+                        components = components
+                    });
                 }
                 catch (Exception ex)
                 {
-                    exception = ex;
-                    RhinoApp.WriteLine($"Error in GetDocumentInfo: {ex.Message}");
+                    tcs.SetException(ex);
                 }
-            }));
+            });
             
-            // Wait for UI thread operation to complete
-            while (result == null && exception == null)
-            {
-                Thread.Sleep(10);
-            }
-            
-            // If there's an exception, throw it
-            if (exception != null)
-            {
-                throw exception;
-            }
-            
-            return result;
+            return tcs.Task.Result;
         }
         
         /// <summary>
@@ -90,83 +66,50 @@ namespace GrasshopperMCP.Commands
         /// <returns>Operation result</returns>
         public static object ClearDocument(Command command)
         {
-            object result = null;
-            Exception exception = null;
-            
-            // Execute on UI thread
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            var tcs = new TaskCompletionSource<object>();
+
+            RhinoApp.InvokeOnUiThread(() =>
             {
                 try
                 {
-                    // Get Grasshopper document
                     var doc = Grasshopper.Instances.ActiveCanvas?.Document;
                     if (doc == null)
                     {
-                        throw new InvalidOperationException("No active Grasshopper document");
+                        tcs.SetException(new InvalidOperationException("No active Grasshopper document"));
+                        return;
                     }
+
+                    var objectsToRemove = doc.Objects.Where(obj => !IsEssentialComponent(obj)).ToList();
                     
-                    // Create a new document object list to avoid modifying collection during iteration
-                    var objectsToRemove = doc.Objects.ToList();
-                    
-                    // Filter out essential components (keep those used for communication with Claude Desktop)
-                    // We can identify essential components by GUID, name, or type
-                    var essentialComponents = objectsToRemove.Where(obj => 
-                        // Check if component name contains specific keywords
-                        obj.NickName.Contains("MCP") || 
-                        obj.NickName.Contains("Claude") ||
-                        // Or check component type
-                        obj.GetType().Name.Contains("GH_MCP") ||
-                        // Or check component description
-                        obj.Description.Contains("Machine Control Protocol") ||
-                        // Keep toggle components
-                        obj.GetType().Name.Contains("GH_BooleanToggle") ||
-                        // Keep panel components (for displaying status)
-                        obj.GetType().Name.Contains("GH_Panel") ||
-                        // Additional component name checks
-                        obj.NickName.Contains("Toggle") ||
-                        obj.NickName.Contains("Status") ||
-                        obj.NickName.Contains("Panel")
-                    ).ToList();
-                    
-                    // Remove essential components from the deletion list
-                    foreach (var component in essentialComponents)
-                    {
-                        objectsToRemove.Remove(component);
-                    }
-                    
-                    // Clear document (only delete non-essential components)
                     doc.RemoveObjects(objectsToRemove, false);
-                    
-                    // Refresh canvas
                     doc.NewSolution(false);
-                    
-                    // Return operation result
-                    result = new
+
+                    tcs.SetResult(new
                     {
                         success = true,
                         message = "Document cleared"
-                    };
+                    });
                 }
                 catch (Exception ex)
                 {
-                    exception = ex;
-                    RhinoApp.WriteLine($"Error in ClearDocument: {ex.Message}");
+                    tcs.SetException(ex);
                 }
-            }));
+            });
+
+            return tcs.Task.Result;
+        }
+
+        private static bool IsEssentialComponent(IGH_DocumentObject obj)
+        {
+            if (obj.NickName.Contains("MCP") || obj.NickName.Contains("Claude")) return true;
+            if (obj.GetType().Name.Contains("GH_MCP")) return true;
+            if (obj.Description.Contains("Machine Control Protocol")) return true;
+            if (obj is GH_BooleanToggle || obj is GH_Panel) return true;
             
-            // Wait for UI thread operation to complete
-            while (result == null && exception == null)
-            {
-                Thread.Sleep(10);
-            }
+            // A more robust way would be to add a tag to the component's user data
+            // For now, we rely on naming conventions.
             
-            // If there's an exception, throw it
-            if (exception != null)
-            {
-                throw exception;
-            }
-            
-            return result;
+            return false;
         }
         
         /// <summary>
@@ -182,12 +125,7 @@ namespace GrasshopperMCP.Commands
                 throw new ArgumentException("Save path is required");
             }
             
-            // Return an error message indicating this feature is temporarily unavailable
-            return new
-            {
-                success = false,
-                message = "SaveDocument is temporarily disabled due to API compatibility issues. Please save the document manually."
-            };
+            throw new NotImplementedException("SaveDocument is temporarily disabled due to API compatibility issues. Please save the document manually.");
         }
         
         /// <summary>
@@ -203,12 +141,7 @@ namespace GrasshopperMCP.Commands
                 throw new ArgumentException("Load path is required");
             }
             
-            // Return an error message indicating this feature is temporarily unavailable
-            return new
-            {
-                success = false,
-                message = "LoadDocument is temporarily disabled due to API compatibility issues. Please load the document manually."
-            };
+            throw new NotImplementedException("LoadDocument is temporarily disabled due to API compatibility issues. Please load the document manually.");
         }
     }
 }

@@ -73,7 +73,8 @@ namespace GrasshopperMCP.Commands
             else
             {
                 // If there are multiple points, create an interpolated curve
-                curve = Curve.CreateInterpolatedCurve(points, 3);
+                int degree = Math.Min(3, points.Count - 1);
+                curve = Curve.CreateInterpolatedCurve(points, degree);
             }
             
             // Return curve information

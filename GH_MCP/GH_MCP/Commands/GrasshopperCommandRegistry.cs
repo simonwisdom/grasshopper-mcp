@@ -34,6 +34,9 @@ namespace GH_MCP.Commands
             // Register intent commands
             RegisterIntentCommands();
             
+            // Register utility commands
+            RegisterUtilityCommands();
+            
             RhinoApp.WriteLine("GH_MCP: Command registry initialized.");
         }
 
@@ -109,6 +112,20 @@ namespace GH_MCP.Commands
             RegisterCommand("get_available_patterns", IntentCommandHandler.GetAvailablePatterns);
             
             RhinoApp.WriteLine("GH_MCP: Intent commands registered.");
+        }
+
+        /// <summary>
+        /// Register basic utility commands
+        /// </summary>
+        private static void RegisterUtilityCommands()
+        {
+            // Ping command for connection testing
+            RegisterCommand("ping", (Command command) => 
+            {
+                return new { message = "pong", timestamp = DateTime.UtcNow };
+            });
+            
+            RhinoApp.WriteLine("GH_MCP: Utility commands registered.");
         }
 
         /// <summary>

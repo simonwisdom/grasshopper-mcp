@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using GrasshopperMCP.Models;
 using GH_MCP.Models;
 using Grasshopper;
@@ -18,6 +19,37 @@ namespace GH_MCP.Commands
     /// </summary>
     public class ConnectionCommandHandler
     {
+        private static Connection ParseConnection(Command command, string idKey, string paramKey, string indexKey)
+        {
+            if (!command.Parameters.TryGetValue(idKey, out object idObj) || idObj == null)
+            {
+                throw new ArgumentException($"Missing required parameter: {idKey}");
+            }
+
+            string paramName = null;
+            int? paramIndex = null;
+
+            if (command.Parameters.TryGetValue(paramKey, out object paramObj) && paramObj != null)
+            {
+                paramName = paramObj.ToString();
+                paramName = FuzzyMatcher.GetClosestParameterName(paramName);
+            }
+            else if (command.Parameters.TryGetValue(indexKey, out object indexObj) && indexObj != null)
+            {
+                if (int.TryParse(indexObj.ToString(), out int index))
+                {
+                    paramIndex = index;
+                }
+            }
+
+            return new Connection
+            {
+                ComponentId = idObj.ToString(),
+                ParameterName = paramName,
+                ParameterIndex = paramIndex
+            };
+        }
+
         /// <summary>
         /// Connect two components
         /// </summary>
@@ -25,181 +57,79 @@ namespace GH_MCP.Commands
         /// <returns>Command execution result</returns>
         public static object ConnectComponents(Command command)
         {
-            // Get source component ID
-            if (!command.Parameters.TryGetValue("sourceId", out object sourceIdObj) || sourceIdObj == null)
-            {
-                return Response.CreateError("Missing required parameter: sourceId");
-            }
-            string sourceId = sourceIdObj.ToString();
-
-            // Get source parameter name or index
-            string sourceParam = null;
-            int? sourceParamIndex = null;
-            if (command.Parameters.TryGetValue("sourceParam", out object sourceParamObj) && sourceParamObj != null)
-            {
-                sourceParam = sourceParamObj.ToString();
-                // Use fuzzy matching to get standardized parameter name
-                sourceParam = FuzzyMatcher.GetClosestParameterName(sourceParam);
-            }
-            else if (command.Parameters.TryGetValue("sourceParamIndex", out object sourceParamIndexObj) && sourceParamIndexObj != null)
-            {
-                if (int.TryParse(sourceParamIndexObj.ToString(), out int index))
-                {
-                    sourceParamIndex = index;
-                }
-            }
-
-            // Get target component ID
-            if (!command.Parameters.TryGetValue("targetId", out object targetIdObj) || targetIdObj == null)
-            {
-                return Response.CreateError("Missing required parameter: targetId");
-            }
-            string targetId = targetIdObj.ToString();
-
-            // Get target parameter name or index
-            string targetParam = null;
-            int? targetParamIndex = null;
-            if (command.Parameters.TryGetValue("targetParam", out object targetParamObj) && targetParamObj != null)
-            {
-                targetParam = targetParamObj.ToString();
-                // Use fuzzy matching to get standardized parameter name
-                targetParam = FuzzyMatcher.GetClosestParameterName(targetParam);
-            }
-            else if (command.Parameters.TryGetValue("targetParamIndex", out object targetParamIndexObj) && targetParamIndexObj != null)
-            {
-                if (int.TryParse(targetParamIndexObj.ToString(), out int index))
-                {
-                    targetParamIndex = index;
-                }
-            }
+            var sourceConnection = ParseConnection(command, "sourceId", "sourceParam", "sourceParamIndex");
+            var targetConnection = ParseConnection(command, "targetId", "targetParam", "targetParamIndex");
 
             // Log connection information
-            RhinoApp.WriteLine($"Connecting: sourceId={sourceId}, sourceParam={sourceParam}, targetId={targetId}, targetParam={targetParam}");
+            RhinoApp.WriteLine($"Connecting: sourceId={sourceConnection.ComponentId}, sourceParam={sourceConnection.ParameterName}, targetId={targetConnection.ComponentId}, targetParam={targetConnection.ParameterName}");
 
-            // Create connection object
             var connection = new ConnectionPairing
             {
-                Source = new Connection
-                {
-                    ComponentId = sourceId,
-                    ParameterName = sourceParam,
-                    ParameterIndex = sourceParamIndex
-                },
-                Target = new Connection
-                {
-                    ComponentId = targetId,
-                    ParameterName = targetParam,
-                    ParameterIndex = targetParamIndex
-                }
+                Source = sourceConnection,
+                Target = targetConnection
             };
 
-            // Check if connection is valid
             if (!connection.IsValid())
             {
-                return Response.CreateError("Invalid connection parameters");
+                throw new ArgumentException("Invalid connection parameters");
             }
 
-            // Execute connection operation on UI thread
-            object result = null;
-            Exception exception = null;
+            var tcs = new TaskCompletionSource<object>();
 
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            RhinoApp.InvokeOnUiThread(() =>
             {
                 try
                 {
-                    // Get current document
                     var doc = Instances.ActiveCanvas?.Document;
                     if (doc == null)
                     {
-                        exception = new InvalidOperationException("No active Grasshopper document");
+                        tcs.SetException(new InvalidOperationException("No active Grasshopper document"));
                         return;
                     }
 
-                    // Find source component
-                    Guid sourceGuid;
-                    if (!Guid.TryParse(connection.Source.ComponentId, out sourceGuid))
-                    {
-                        exception = new ArgumentException($"Invalid source component ID: {connection.Source.ComponentId}");
-                        return;
-                    }
-
-                    var sourceComponent = doc.FindObject(sourceGuid, true);
+                    var sourceComponent = doc.FindObject(new Guid(connection.Source.ComponentId), true);
                     if (sourceComponent == null)
                     {
-                        exception = new ArgumentException($"Source component not found: {connection.Source.ComponentId}");
+                        tcs.SetException(new ArgumentException($"Source component not found: {connection.Source.ComponentId}"));
                         return;
                     }
 
-                    // Find target component
-                    Guid targetGuid;
-                    if (!Guid.TryParse(connection.Target.ComponentId, out targetGuid))
-                    {
-                        exception = new ArgumentException($"Invalid target component ID: {connection.Target.ComponentId}");
-                        return;
-                    }
-
-                    var targetComponent = doc.FindObject(targetGuid, true);
+                    var targetComponent = doc.FindObject(new Guid(connection.Target.ComponentId), true);
                     if (targetComponent == null)
                     {
-                        exception = new ArgumentException($"Target component not found: {connection.Target.ComponentId}");
+                        tcs.SetException(new ArgumentException($"Target component not found: {connection.Target.ComponentId}"));
                         return;
                     }
 
-                    // Check if source component is an input parameter component
-                    if (sourceComponent is IGH_Param && ((IGH_Param)sourceComponent).Kind == GH_ParamKind.input)
-                    {
-                        exception = new ArgumentException("Source component cannot be an input parameter");
-                        return;
-                    }
-
-                    // Check if target component is an output parameter component
-                    if (targetComponent is IGH_Param && ((IGH_Param)targetComponent).Kind == GH_ParamKind.output)
-                    {
-                        exception = new ArgumentException("Target component cannot be an output parameter");
-                        return;
-                    }
-
-                    // Get source parameter
                     IGH_Param sourceParameter = GetParameter(sourceComponent, connection.Source, false);
                     if (sourceParameter == null)
                     {
-                        exception = new ArgumentException($"Source parameter not found: {connection.Source.ParameterName ?? connection.Source.ParameterIndex.ToString()}");
+                        tcs.SetException(new ArgumentException($"Source parameter not found: {connection.Source.ParameterName ?? connection.Source.ParameterIndex.ToString()}"));
                         return;
                     }
 
-                    // Get target parameter
                     IGH_Param targetParameter = GetParameter(targetComponent, connection.Target, true);
                     if (targetParameter == null)
                     {
-                        exception = new ArgumentException($"Target parameter not found: {connection.Target.ParameterName ?? connection.Target.ParameterIndex.ToString()}");
+                        tcs.SetException(new ArgumentException($"Target parameter not found: {connection.Target.ParameterName ?? connection.Target.ParameterIndex.ToString()}"));
                         return;
                     }
 
-                    // Check parameter type compatibility
                     if (!AreParametersCompatible(sourceParameter, targetParameter))
                     {
-                        exception = new ArgumentException($"Parameters are not compatible: {sourceParameter.GetType().Name} cannot connect to {targetParameter.GetType().Name}");
+                        tcs.SetException(new ArgumentException($"Parameters are not compatible: {sourceParameter.GetType().Name} cannot connect to {targetParameter.GetType().Name}"));
                         return;
                     }
 
-                    // Remove existing connections (if needed)
                     if (targetParameter.SourceCount > 0)
                     {
                         targetParameter.RemoveAllSources();
                     }
 
-                    // Connect parameters
                     targetParameter.AddSource(sourceParameter);
-                    
-                    // Refresh data
-                    targetParameter.CollectData();
-                    targetParameter.ComputeData();
-                    
-                    // Refresh canvas
                     doc.NewSolution(false);
 
-                    // Return result
-                    result = new
+                    tcs.SetResult(new
                     {
                         success = true,
                         message = "Connection created successfully",
@@ -207,32 +137,15 @@ namespace GH_MCP.Commands
                         targetId = connection.Target.ComponentId,
                         sourceParam = sourceParameter.Name,
                         targetParam = targetParameter.Name,
-                        sourceType = sourceParameter.GetType().Name,
-                        targetType = targetParameter.GetType().Name,
-                        sourceDescription = sourceParameter.Description,
-                        targetDescription = targetParameter.Description
-                    };
+                    });
                 }
                 catch (Exception ex)
                 {
-                    exception = ex;
-                    RhinoApp.WriteLine($"Error in ConnectComponents: {ex.Message}");
+                    tcs.SetException(ex);
                 }
-            }));
+            });
 
-            // Wait for UI thread operation to complete
-            while (result == null && exception == null)
-            {
-                Thread.Sleep(10);
-            }
-
-            // If there's an exception, throw it
-            if (exception != null)
-            {
-                return Response.CreateError($"Error executing command 'connect_components': {exception.Message}");
-            }
-
-            return Response.Ok(result);
+            return tcs.Task.Result;
         }
 
         /// <summary>

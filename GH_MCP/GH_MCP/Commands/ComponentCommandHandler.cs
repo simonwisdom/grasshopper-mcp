@@ -38,7 +38,16 @@ namespace GrasshopperMCP.Commands
             }
             
             // Use fuzzy matching to get standardized component name
-            string normalizedType = FuzzyMatcher.GetClosestComponentName(type);
+            string normalizedType = type; // Temporarily bypass FuzzyMatcher
+            try
+            {
+                normalizedType = FuzzyMatcher.GetClosestComponentName(type);
+            }
+            catch (Exception ex)
+            {
+                RhinoApp.WriteLine($"GH_MCP: FuzzyMatcher failed, using original type '{type}': {ex.Message}");
+                normalizedType = type;
+            }
             
             // Log request information
             RhinoApp.WriteLine($"AddComponent request: type={type}, normalized={normalizedType}, x={x}, y={y}");
@@ -1053,6 +1062,85 @@ namespace GrasshopperMCP.Commands
             }
             
             return result;
+        }
+
+        public static object SearchComponents(Command command)
+        {
+            string query = command.GetParameter<string>("query");
+            if (string.IsNullOrEmpty(query))
+            {
+                throw new ArgumentException("Search query is required");
+            }
+
+            object result = null;
+            
+            RhinoApp.InvokeOnUiThread((Action)(() =>
+            {
+                try
+                {
+                    var doc = Grasshopper.Instances.ActiveCanvas?.Document;
+                    if (doc == null)
+                    {
+                        throw new InvalidOperationException("No active Grasshopper document found.");
+                    }
+
+                    var matchingComponents = new List<object>();
+                    var queryLower = query.ToLowerInvariant();
+                    
+                    foreach (var obj in doc.Objects)
+                    {
+                        var componentName = obj.NickName?.ToLowerInvariant() ?? "";
+                        var componentType = obj.GetType().Name.ToLowerInvariant();
+                        var componentDesc = obj.Description?.ToLowerInvariant() ?? "";
+                        
+                        if (componentName.Contains(queryLower) || 
+                            componentType.Contains(queryLower) || 
+                            componentDesc.Contains(queryLower))
+                        {
+                            matchingComponents.Add(new
+                            {
+                                id = obj.InstanceGuid.ToString(),
+                                name = obj.NickName,
+                                type = obj.GetType().Name,
+                                description = obj.Description
+                            });
+                        }
+                    }
+                    
+                    result = matchingComponents;
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            }));
+            
+            return result;
+        }
+
+        public static object GetComponentParameters(Command command)
+        {
+            string componentType = command.GetParameter<string>("componentType");
+            if (string.IsNullOrEmpty(componentType))
+            {
+                throw new ArgumentException("Component type is required");
+            }
+
+            // Use IntentRecognizer to get component details
+            var componentDetails = IntentRecognizer.GetComponentDetails(componentType);
+            if (componentDetails != null)
+            {
+                return componentDetails;
+            }
+
+            // Fallback: return basic info
+            return new
+            {
+                name = componentType,
+                inputs = new List<object>(),
+                outputs = new List<object>(),
+                description = "Component details not available"
+            };
         }
 
         private static IGH_DocumentObject CreateComponentByName(string name)

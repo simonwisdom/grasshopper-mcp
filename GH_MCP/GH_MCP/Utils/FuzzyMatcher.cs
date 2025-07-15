@@ -11,6 +11,40 @@ namespace GH_MCP.Utils
     /// </summary>
     public static class FuzzyMatcher
     {
+        static FuzzyMatcher()
+        {
+            try
+            {
+                Rhino.RhinoApp.WriteLine("GH_MCP: Initializing FuzzyMatcher...");
+                
+                // Test dictionary initialization explicitly
+                var testComponentMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "test", "Test" }
+                };
+                Rhino.RhinoApp.WriteLine("GH_MCP: ComponentNameMap test successful");
+                
+                var testParamMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "test", "Test" }
+                };
+                Rhino.RhinoApp.WriteLine("GH_MCP: ParameterNameMap test successful");
+                
+                Rhino.RhinoApp.WriteLine("GH_MCP: FuzzyMatcher initialization completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Rhino.RhinoApp.WriteLine($"GH_MCP: Error initializing FuzzyMatcher: {ex.Message}");
+                Rhino.RhinoApp.WriteLine($"GH_MCP: Exception type: {ex.GetType().Name}");
+                Rhino.RhinoApp.WriteLine($"GH_MCP: Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Rhino.RhinoApp.WriteLine($"GH_MCP: Inner exception: {ex.InnerException.Message}");
+                }
+                throw;
+            }
+        }
+
         // Component name mapping dictionary, maps commonly used simplified names to actual Grasshopper component names
         private static readonly Dictionary<string, string> ComponentNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {

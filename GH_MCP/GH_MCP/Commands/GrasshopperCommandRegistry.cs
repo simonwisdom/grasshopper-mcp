@@ -80,6 +80,12 @@ namespace GH_MCP.Commands
             
             // Get all connections
             RegisterCommand("get_connections", ComponentCommandHandler.GetConnections);
+            
+            // Search components
+            RegisterCommand("search_components", ComponentCommandHandler.SearchComponents);
+            
+            // Get component parameters
+            RegisterCommand("get_component_parameters", ComponentCommandHandler.GetComponentParameters);
         }
 
         /// <summary>
@@ -172,10 +178,22 @@ namespace GH_MCP.Commands
                 catch (Exception ex)
                 {
                     RhinoApp.WriteLine($"GH_MCP: Error executing command '{command.Type}': {ex.Message}");
+                    RhinoApp.WriteLine($"GH_MCP: Exception type: {ex.GetType().Name}");
+                    RhinoApp.WriteLine($"GH_MCP: Stack trace: {ex.StackTrace}");
+                    
+                    // Log inner exception if present
+                    if (ex.InnerException != null)
+                    {
+                        RhinoApp.WriteLine($"GH_MCP: Inner exception: {ex.InnerException.Message}");
+                        RhinoApp.WriteLine($"GH_MCP: Inner exception type: {ex.InnerException.GetType().Name}");
+                    }
+                    
                     return Response.CreateError($"Error executing command '{command.Type}': {ex.Message}");
                 }
             }
             
+            RhinoApp.WriteLine($"GH_MCP: No handler registered for command type '{command.Type}'");
+            RhinoApp.WriteLine($"GH_MCP: Available commands: {string.Join(", ", CommandHandlers.Keys)}");
             return Response.CreateError($"No handler registered for command type '{command.Type}'");
         }
 

@@ -28,15 +28,38 @@ namespace GH_MCP.Utils
         {
             try
             {
-                if (File.Exists(_knowledgeBasePath))
+                // Try multiple possible paths
+                var possiblePaths = new List<string>
                 {
-                    string json = File.ReadAllText(_knowledgeBasePath);
+                    _knowledgeBasePath,
+                    Path.Combine(Path.GetDirectoryName(typeof(IntentRecognizer).Assembly.Location), "..", "Resources", "ComponentKnowledgeBase.json"),
+                    Path.Combine(Path.GetDirectoryName(typeof(IntentRecognizer).Assembly.Location), "..", "..", "Resources", "ComponentKnowledgeBase.json"),
+                    Path.Combine(Environment.CurrentDirectory, "GH_MCP", "GH_MCP", "Resources", "ComponentKnowledgeBase.json")
+                };
+
+                string foundPath = null;
+                foreach (var path in possiblePaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        foundPath = path;
+                        break;
+                    }
+                }
+
+                if (foundPath != null)
+                {
+                    string json = File.ReadAllText(foundPath);
                     _knowledgeBase = JObject.Parse(json);
-                    RhinoApp.WriteLine($"Component knowledge base loaded from {_knowledgeBasePath}");
+                    RhinoApp.WriteLine($"Component knowledge base loaded from {foundPath}");
                 }
                 else
                 {
-                    RhinoApp.WriteLine($"Component knowledge base not found at {_knowledgeBasePath}");
+                    RhinoApp.WriteLine($"Component knowledge base not found. Tried paths:");
+                    foreach (var path in possiblePaths)
+                    {
+                        RhinoApp.WriteLine($"  - {path}");
+                    }
                     _knowledgeBase = new JObject();
                 }
             }

@@ -42,9 +42,9 @@ jobs:
     - name: List build outputs
       run: |
         echo "=== Build Outputs ==="
-        dir GH_MCP\GH_MCP\bin\Release\net48\*.gha /s
-        dir GH_MCP\GH_MCP\bin\Release\net7.0-windows\*.gha /s
-        dir GH_MCP\GH_MCP\bin\Release\net7.0\*.gha /s
+        Get-ChildItem -Path "GH_MCP\GH_MCP\bin\Release\net48\*.gha" -Recurse -ErrorAction SilentlyContinue
+        Get-ChildItem -Path "GH_MCP\GH_MCP\bin\Release\net7.0-windows\*.gha" -Recurse -ErrorAction SilentlyContinue
+        Get-ChildItem -Path "GH_MCP\GH_MCP\bin\Release\net7.0\*.gha" -Recurse -ErrorAction SilentlyContinue
     
     - name: Upload .NET Framework 4.8 build artifact
       uses: actions/upload-artifact@v4

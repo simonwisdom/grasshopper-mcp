@@ -67,12 +67,45 @@ jobs:
         path: GH_MCP/GH_MCP/bin/Release/net7.0/GH_MCP.gha
         retention-days: 30
     
-    - name: Build Summary
+    - name: Copy builds to releases folder
       run: |
-        echo "=== Build Summary ==="
-        echo "Build completed successfully for all target frameworks"
-        echo "- .NET Framework 4.8: Compatible with Rhino 7/8"
-        echo "- .NET 7.0 Windows: Compatible with Rhino 8 Windows"
-        echo "- .NET 7.0: Cross-platform compatible"
-        echo ""
-        echo "Artifacts available for download from Actions tab" 
+        echo "=== Copying builds to releases folder ==="
+        # Create releases directory if it doesn't exist
+        if (!(Test-Path "releases")) {
+          New-Item -ItemType Directory -Path "releases"
+        }
+        
+        # Copy the primary build (net48) as the main GH_MCP.gha
+        if (Test-Path "GH_MCP/GH_MCP/bin/Release/net48/GH_MCP.gha") {
+          Copy-Item "GH_MCP/GH_MCP/bin/Release/net48/GH_MCP.gha" "releases/GH_MCP.gha" -Force
+          echo "Copied net48 build to releases/GH_MCP.gha"
+        }
+        
+        # Copy framework-specific builds with version info
+        if (Test-Path "GH_MCP/GH_MCP/bin/Release/net48/GH_MCP.gha") {
+          Copy-Item "GH_MCP/GH_MCP/bin/Release/net48/GH_MCP.gha" "releases/GH_MCP-v1.0-net48.gha" -Force
+          echo "Copied net48 build to releases/GH_MCP-v1.0-net48.gha"
+        }
+        
+        if (Test-Path "GH_MCP/GH_MCP/bin/Release/net7.0-windows/GH_MCP.gha") {
+          Copy-Item "GH_MCP/GH_MCP/bin/Release/net7.0-windows/GH_MCP.gha" "releases/GH_MCP-v1.0-net7.0-windows.gha" -Force
+          echo "Copied net7.0-windows build to releases/GH_MCP-v1.0-net7.0-windows.gha"
+        }
+        
+        if (Test-Path "GH_MCP/GH_MCP/bin/Release/net7.0/GH_MCP.gha") {
+          Copy-Item "GH_MCP/GH_MCP/bin/Release/net7.0/GH_MCP.gha" "releases/GH_MCP-v1.0-net7.0.gha" -Force
+          echo "Copied net7.0 build to releases/GH_MCP-v1.0-net7.0.gha"
+        }
+        
+        # List what was copied
+        echo "=== Files in releases folder ==="
+        Get-ChildItem "releases/*.gha" | ForEach-Object { echo $_.Name }
+    
+    - name: Commit and push releases
+      run: |
+        echo "=== Committing releases to repository ==="
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add releases/
+        git commit -m "Update build artifacts [skip ci]" || echo "No changes to commit"
+        git push 

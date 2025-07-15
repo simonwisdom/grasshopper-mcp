@@ -5,25 +5,44 @@ using Grasshopper.Kernel;
 
 namespace GrasshopperMCP
 {
+  /// <summary>
+  /// Assembly information for the Grasshopper MCP component
+  /// </summary>
   public class GH_MCPInfo : GH_AssemblyInfo
   {
+    /// <summary>
+    /// Gets the name of the assembly
+    /// </summary>
     public override string Name => "GH_MCP";
 
-    //Return a 24x24 pixel bitmap to represent this GHA library.
+    /// <summary>
+    /// Gets the icon for the assembly (24x24 pixel bitmap)
+    /// </summary>
     public override Bitmap Icon => null;
 
-    //Return a short string describing the purpose of this GHA library.
-    public override string Description => "";
+    /// <summary>
+    /// Gets the description of the assembly
+    /// </summary>
+    public override string Description => "Machine Control Protocol bridge for Grasshopper, enabling natural language control through Claude Desktop";
 
+    /// <summary>
+    /// Gets the unique identifier for the assembly
+    /// </summary>
     public override Guid Id => new Guid("1b472cf6-015c-496a-a0a1-7ced4df994a3");
 
-    //Return a string identifying you or your company.
-    public override string AuthorName => "";
+    /// <summary>
+    /// Gets the author name
+    /// </summary>
+    public override string AuthorName => "Simon Wisdom";
 
-    //Return a string representing your preferred contact details.
-    public override string AuthorContact => "";
+    /// <summary>
+    /// Gets the author contact information
+    /// </summary>
+    public override string AuthorContact => "https://github.com/simonwisdom/grasshopper-mcp";
 
-    //Return a string representing the version.  This returns the same version as the assembly.
+    /// <summary>
+    /// Gets the assembly version
+    /// </summary>
     public override string AssemblyVersion => GetType().Assembly.GetName().Version.ToString();
   }
 }

@@ -518,21 +518,49 @@ namespace GH_MCP.Commands
         }
     }
 
+    /// <summary>
+    /// Represents a pairing of source and target connections
+    /// </summary>
     public class ConnectionPairing
     {
+        /// <summary>
+        /// Gets or sets the source connection
+        /// </summary>
         public Connection Source { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the target connection
+        /// </summary>
         public Connection Target { get; set; }
 
+        /// <summary>
+        /// Checks if the connection pairing is valid
+        /// </summary>
+        /// <returns>True if both source and target are not null</returns>
         public bool IsValid()
         {
             return Source != null && Target != null;
         }
     }
 
+    /// <summary>
+    /// Represents a connection to a component parameter
+    /// </summary>
     public class Connection
     {
+        /// <summary>
+        /// Gets or sets the component identifier
+        /// </summary>
         public string ComponentId { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the parameter name
+        /// </summary>
         public string ParameterName { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the parameter index (optional)
+        /// </summary>
         public int? ParameterIndex { get; set; }
     }
 }

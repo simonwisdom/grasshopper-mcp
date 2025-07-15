@@ -32,7 +32,15 @@ namespace GH_MCP.Commands
             if (command.Parameters.TryGetValue(paramKey, out object paramObj) && paramObj != null)
             {
                 paramName = paramObj.ToString();
-                paramName = FuzzyMatcher.GetClosestParameterName(paramName);
+                try
+                {
+                    paramName = FuzzyMatcher.GetClosestParameterName(paramName);
+                }
+                catch (Exception ex)
+                {
+                    RhinoApp.WriteLine($"GH_MCP: FuzzyMatcher failed for parameter '{paramName}', using original: {ex.Message}");
+                    // Keep original parameter name
+                }
             }
             else if (command.Parameters.TryGetValue(indexKey, out object indexObj) && indexObj != null)
             {

@@ -254,7 +254,6 @@ namespace GH_MCP.Utils
             { "parameter", "Parameter" },
             { "param", "Parameter" },
             { "t", "Parameter" },
-            { "point", "Point" },
             { "tangent", "Tangent" },
             { "normal", "Normal" },
             { "curvature", "Curvature" },

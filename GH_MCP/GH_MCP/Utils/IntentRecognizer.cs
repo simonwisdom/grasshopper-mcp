@@ -34,7 +34,9 @@ namespace GH_MCP.Utils
                     _knowledgeBasePath,
                     Path.Combine(Path.GetDirectoryName(typeof(IntentRecognizer).Assembly.Location), "..", "Resources", "ComponentKnowledgeBase.json"),
                     Path.Combine(Path.GetDirectoryName(typeof(IntentRecognizer).Assembly.Location), "..", "..", "Resources", "ComponentKnowledgeBase.json"),
-                    Path.Combine(Environment.CurrentDirectory, "GH_MCP", "GH_MCP", "Resources", "ComponentKnowledgeBase.json")
+                    Path.Combine(Environment.CurrentDirectory, "GH_MCP", "GH_MCP", "Resources", "ComponentKnowledgeBase.json"),
+                    Path.Combine(Path.GetDirectoryName(typeof(IntentRecognizer).Assembly.Location), "Resources", "ComponentKnowledgeBase.json"),
+                    Path.Combine(Path.GetDirectoryName(typeof(IntentRecognizer).Assembly.Location), "..", "..", "..", "GH_MCP", "GH_MCP", "Resources", "ComponentKnowledgeBase.json")
                 };
 
                 string foundPath = null;

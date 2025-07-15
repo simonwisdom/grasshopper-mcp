@@ -45,7 +45,7 @@ namespace GrasshopperMCP.Commands
             Exception exception = null;
             
             // Execute on UI thread
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            RhinoApp.InvokeOnUiThread((Action)(() =>
             {
                 try
                 {
@@ -430,7 +430,7 @@ namespace GrasshopperMCP.Commands
             Exception exception = null;
             
             // Execute on UI thread
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            RhinoApp.InvokeOnUiThread((Action)(() =>
             {
                 try
                 {
@@ -556,7 +556,7 @@ namespace GrasshopperMCP.Commands
             Exception exception = null;
             
             // Execute on UI thread
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            RhinoApp.InvokeOnUiThread((Action)(() =>
             {
                 try
                 {
@@ -697,7 +697,7 @@ namespace GrasshopperMCP.Commands
             Exception exception = null;
             
             // Execute on UI thread
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            RhinoApp.InvokeOnUiThread((Action)(() =>
             {
                 try
                 {
@@ -818,7 +818,7 @@ namespace GrasshopperMCP.Commands
             Exception exception = null;
             
             // Execute on UI thread
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            RhinoApp.InvokeOnUiThread((Action)(() =>
             {
                 try
                 {
@@ -935,9 +935,9 @@ namespace GrasshopperMCP.Commands
                     }
                     
                     // Check input parameters for warnings
-                    foreach (var param in ghComponent.Params.Input)
+                    foreach (var inputParam in ghComponent.Params.Input)
                     {
-                        var paramMessages = param.RuntimeMessages;
+                        var paramMessages = inputParam.RuntimeMessages;
                         if (paramMessages != null && paramMessages.Count > 0)
                         {
                             foreach (var message in paramMessages)
@@ -947,8 +947,8 @@ namespace GrasshopperMCP.Commands
                                     { "component", componentInfo },
                                     { "parameter", new Dictionary<string, object>
                                         {
-                                            { "name", param.Name },
-                                            { "nickname", param.NickName },
+                                            { "name", inputParam.Name },
+                                            { "nickname", inputParam.NickName },
                                             { "type", "input" }
                                         }
                                     },
@@ -959,32 +959,30 @@ namespace GrasshopperMCP.Commands
                                 });
                             }
                         }
-                        
                         // Check for data collection issues
-                        if (param.VolatileDataCount == 0 && param.SourceCount > 0)
+                        if (inputParam.VolatileDataCount == 0 && inputParam.SourceCount > 0)
                         {
                             messages.Add(new Dictionary<string, object>
                             {
                                 { "component", componentInfo },
                                 { "parameter", new Dictionary<string, object>
                                     {
-                                        { "name", param.Name },
-                                        { "nickname", param.NickName },
+                                        { "name", inputParam.Name },
+                                        { "nickname", inputParam.NickName },
                                         { "type", "input" }
                                     }
                                 },
                                 { "level", "Warning" },
-                                { "text", $"Parameter '{param.NickName}' failed to collect data" },
+                                { "text", $"Parameter '{inputParam.NickName}' failed to collect data" },
                                 { "description", "This parameter has connections but no data is being received" },
                                 { "source", "data_collection" }
                             });
                         }
                     }
-                    
                     // Check output parameters for warnings
-                    foreach (var param in ghComponent.Params.Output)
+                    foreach (var outputParam in ghComponent.Params.Output)
                     {
-                        var paramMessages = param.RuntimeMessages;
+                        var paramMessages = outputParam.RuntimeMessages;
                         if (paramMessages != null && paramMessages.Count > 0)
                         {
                             foreach (var message in paramMessages)
@@ -994,8 +992,8 @@ namespace GrasshopperMCP.Commands
                                     { "component", componentInfo },
                                     { "parameter", new Dictionary<string, object>
                                         {
-                                            { "name", param.Name },
-                                            { "nickname", param.NickName },
+                                            { "name", outputParam.Name },
+                                            { "nickname", outputParam.NickName },
                                             { "type", "output" }
                                         }
                                     },
@@ -1010,15 +1008,15 @@ namespace GrasshopperMCP.Commands
                 }
                 
                 // Check for floating parameters (parameters without connections)
-                if (component is IGH_Param param)
+                if (component is IGH_Param floatingParam)
                 {
-                    if (param.Kind == GH_ParamKind.input && param.SourceCount == 0)
+                    if (floatingParam.Kind == GH_ParamKind.input && floatingParam.SourceCount == 0)
                     {
                         messages.Add(new Dictionary<string, object>
                         {
                             { "component", componentInfo },
                             { "level", "Warning" },
-                            { "text", $"Floating parameter '{param.NickName}' has no connections" },
+                            { "text", $"Floating parameter '{floatingParam.NickName}' has no connections" },
                             { "description", "This parameter is not connected to any source" },
                             { "source", "floating_parameter" }
                         });
@@ -1074,7 +1072,7 @@ namespace GrasshopperMCP.Commands
             Exception exception = null;
             
             // Execute on UI thread
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            RhinoApp.InvokeOnUiThread((Action)(() =>
             {
                 try
                 {
@@ -1154,7 +1152,7 @@ namespace GrasshopperMCP.Commands
             Exception exception = null;
             
             // Execute on UI thread
-            RhinoApp.InvokeOnUiThread(new Action(() =>
+            RhinoApp.InvokeOnUiThread((Action)(() =>
             {
                 try
                 {

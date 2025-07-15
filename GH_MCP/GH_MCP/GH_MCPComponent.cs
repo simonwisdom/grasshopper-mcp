@@ -66,15 +66,15 @@ namespace GrasshopperMCP
             {
                 hasInitialized = true;
                 // Delay start to ensure component is fully initialized
-                Task.Delay(500).ContinueWith(_ => 
+                Task.Delay(500).ContinueWith((Task _) => 
                 {
-                    RhinoApp.InvokeOnUiThread(() => 
+                    RhinoApp.InvokeOnUiThread((Action)(() => 
                     {
                         if (!isRunning)
                         {
                             Start();
                         }
-                    });
+                    }));
                 });
             }
         }
@@ -278,14 +278,14 @@ namespace GrasshopperMCP
             var startStopItem = new System.Windows.Forms.ToolStripMenuItem(
                 isRunning ? "Stop Server" : "Start Server",
                 null,
-                (sender, e) => 
+                (System.EventHandler)((sender, e) => 
                 {
                     if (isRunning)
                         Stop();
                     else
                         Start();
-                    ExpireLayout();
-                }
+                    ExpireSolution();
+                })
             );
             menu.Items.Add(startStopItem);
             
@@ -296,7 +296,7 @@ namespace GrasshopperMCP
             var portItem = new System.Windows.Forms.ToolStripMenuItem(
                 $"Current Port: {grasshopperPort}",
                 null,
-                (sender, e) => 
+                (System.EventHandler)((sender, e) => 
                 {
                     // Use simple message box to inform user about port modification
                     var result = System.Windows.Forms.MessageBox.Show(
@@ -305,7 +305,7 @@ namespace GrasshopperMCP
                         System.Windows.Forms.MessageBoxButtons.OK,
                         System.Windows.Forms.MessageBoxIcon.Information
                     );
-                }
+                })
             );
             menu.Items.Add(portItem);
             
@@ -321,11 +321,11 @@ namespace GrasshopperMCP
             var resetItem = new System.Windows.Forms.ToolStripMenuItem(
                 "Reset Auto-Start",
                 null,
-                (sender, e) => 
+                (System.EventHandler)((sender, e) => 
                 {
                     hasInitialized = false;
-                    ExpireLayout();
-                }
+                    ExpireSolution();
+                })
             );
             menu.Items.Add(resetItem);
         }

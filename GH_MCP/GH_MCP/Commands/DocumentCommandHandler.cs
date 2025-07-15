@@ -104,7 +104,7 @@ namespace GrasshopperMCP.Commands
             if (obj.NickName.Contains("MCP") || obj.NickName.Contains("Claude")) return true;
             if (obj.GetType().Name.Contains("GH_MCP")) return true;
             if (obj.Description.Contains("Machine Control Protocol")) return true;
-            if (obj is GH_BooleanToggle || obj is GH_Panel) return true;
+            if (obj.GetType().Name.Contains("GH_BooleanToggle") || obj.GetType().Name.Contains("GH_Panel")) return true;
             
             // A more robust way would be to add a tag to the component's user data
             // For now, we rely on naming conventions.

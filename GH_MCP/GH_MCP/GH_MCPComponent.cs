@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -133,7 +135,43 @@ namespace GrasshopperMCP
         /// <summary>
         /// Expose icon
         /// </summary>
-        protected override Bitmap Icon => null;
+        protected override Bitmap Icon
+        {
+            get
+            {
+                // Create a sideways infinity sign icon
+                var bitmap = new Bitmap(24, 24);
+                using (var graphics = Graphics.FromImage(bitmap))
+                {
+                    // Set high quality rendering
+                    graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+                    
+                    // Clear background with transparent color
+                    graphics.Clear(Color.Transparent);
+                    
+                    // Create pen for the infinity sign
+                    using (var pen = new Pen(Color.Black, 2.0f))
+                    {
+                        // Draw a sideways infinity sign (∞ rotated 90 degrees)
+                        // This creates two overlapping circles forming an infinity symbol
+                        
+                        // Left circle
+                        graphics.DrawEllipse(pen, 4, 8, 8, 8);
+                        
+                        // Right circle  
+                        graphics.DrawEllipse(pen, 12, 8, 8, 8);
+                        
+                        // Add connecting lines to complete the infinity symbol
+                        // Top connection
+                        graphics.DrawLine(pen, 8, 8, 16, 8);
+                        // Bottom connection
+                        graphics.DrawLine(pen, 8, 16, 16, 16);
+                    }
+                }
+                return bitmap;
+            }
+        }
         
         /// <summary>
         /// Last received command

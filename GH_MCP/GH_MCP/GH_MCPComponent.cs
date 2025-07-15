@@ -284,7 +284,7 @@ namespace GrasshopperMCP
                         Stop();
                     else
                         Start();
-                    ExpireSolution();
+                    ExpireSolution(true);
                 })
             );
             menu.Items.Add(startStopItem);
@@ -324,7 +324,7 @@ namespace GrasshopperMCP
                 (System.EventHandler)((sender, e) => 
                 {
                     hasInitialized = false;
-                    ExpireSolution();
+                    ExpireSolution(true);
                 })
             );
             menu.Items.Add(resetItem);

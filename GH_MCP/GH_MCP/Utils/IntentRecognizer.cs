@@ -10,7 +10,7 @@ using GH_MCP.Models;
 namespace GH_MCP.Utils
 {
     /// <summary>
-    /// 負責識別用戶意圖並將其轉換為具體的元件和連接
+    /// Responsible for recognizing user intent and converting it to specific components and connections
     /// </summary>
     public class IntentRecognizer
     {
@@ -22,7 +22,7 @@ namespace GH_MCP.Utils
         );
 
         /// <summary>
-        /// 初始化知識庫
+        /// Initialize knowledge base
         /// </summary>
         public static void Initialize()
         {
@@ -48,10 +48,10 @@ namespace GH_MCP.Utils
         }
 
         /// <summary>
-        /// 從用戶描述中識別意圖
+        /// Recognize intent from user description
         /// </summary>
-        /// <param name="description">用戶描述</param>
-        /// <returns>識別到的模式名稱，如果沒有匹配則返回 null</returns>
+        /// <param name="description">User description</param>
+        /// <returns>Recognized pattern name, returns null if no match</returns>
         public static string RecognizeIntent(string description)
         {
             if (_knowledgeBase == null)
@@ -64,13 +64,13 @@ namespace GH_MCP.Utils
                 return null;
             }
 
-            // 將描述轉換為小寫並分割為單詞
+            // Convert description to lowercase and split into words
             string[] words = description.ToLowerInvariant().Split(
                 new[] { ' ', ',', '.', ';', ':', '!', '?', '(', ')', '[', ']', '{', '}' },
                 StringSplitOptions.RemoveEmptyEntries
             );
 
-            // 計算每個意圖的匹配分數
+            // Calculate match score for each intent
             var intentScores = new Dictionary<string, int>();
 
             foreach (var intent in _knowledgeBase["intents"])
@@ -78,7 +78,7 @@ namespace GH_MCP.Utils
                 string patternName = intent["pattern"].ToString();
                 var keywords = intent["keywords"].ToObject<List<string>>();
 
-                // 計算匹配的關鍵詞數量
+                // Count matching keywords
                 int matchCount = words.Count(word => keywords.Contains(word));
 
                 if (matchCount > 0)
@@ -87,7 +87,7 @@ namespace GH_MCP.Utils
                 }
             }
 
-            // 返回得分最高的意圖
+            // Return the intent with the highest score
             if (intentScores.Count > 0)
             {
                 return intentScores.OrderByDescending(pair => pair.Value).First().Key;
@@ -97,10 +97,10 @@ namespace GH_MCP.Utils
         }
 
         /// <summary>
-        /// 獲取指定模式的元件和連接
+        /// Get components and connections for specified pattern
         /// </summary>
-        /// <param name="patternName">模式名稱</param>
-        /// <returns>包含元件和連接的元組</returns>
+        /// <param name="patternName">Pattern name</param>
+        /// <returns>Tuple containing components and connections</returns>
         public static (List<ComponentInfo> Components, List<ConnectionInfo> Connections) GetPatternDetails(string patternName)
         {
             if (_knowledgeBase == null)
@@ -116,14 +116,14 @@ namespace GH_MCP.Utils
                 return (components, connections);
             }
 
-            // 查找匹配的模式
+            // Find matching pattern
             var pattern = _knowledgeBase["patterns"].FirstOrDefault(p => p["name"].ToString() == patternName);
             if (pattern == null)
             {
                 return (components, connections);
             }
 
-            // 獲取元件信息
+            // Get component information
             foreach (var comp in pattern["components"])
             {
                 var componentInfo = new ComponentInfo
@@ -134,7 +134,7 @@ namespace GH_MCP.Utils
                     Id = comp["id"].ToString()
                 };
 
-                // 如果有設置，則添加設置
+                // If there are settings, add them
                 if (comp["settings"] != null)
                 {
                     componentInfo.Settings = comp["settings"].ToObject<Dictionary<string, object>>();
@@ -143,7 +143,7 @@ namespace GH_MCP.Utils
                 components.Add(componentInfo);
             }
 
-            // 獲取連接信息
+            // Get connection information
             foreach (var conn in pattern["connections"])
             {
                 connections.Add(new ConnectionInfo
@@ -159,9 +159,9 @@ namespace GH_MCP.Utils
         }
 
         /// <summary>
-        /// 獲取所有可用的元件類型
+        /// Get all available component types
         /// </summary>
-        /// <returns>元件類型列表</returns>
+        /// <returns>List of component types</returns>
         public static List<string> GetAvailableComponentTypes()
         {
             if (_knowledgeBase == null)
@@ -183,10 +183,10 @@ namespace GH_MCP.Utils
         }
 
         /// <summary>
-        /// 獲取元件的詳細信息
+        /// Get detailed component information
         /// </summary>
-        /// <param name="componentType">元件類型</param>
-        /// <returns>元件詳細信息</returns>
+        /// <param name="componentType">Component type</param>
+        /// <returns>Detailed component information</returns>
         public static JObject GetComponentDetails(string componentType)
         {
             if (_knowledgeBase == null)
@@ -211,7 +211,7 @@ namespace GH_MCP.Utils
     }
 
     /// <summary>
-    /// 元件信息類
+    /// Component information class
     /// </summary>
     public class ComponentInfo
     {
@@ -223,7 +223,7 @@ namespace GH_MCP.Utils
     }
 
     /// <summary>
-    /// 連接信息類
+    /// Connection information class
     /// </summary>
     public class ConnectionInfo
     {

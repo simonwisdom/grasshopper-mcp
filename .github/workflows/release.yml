@@ -1,0 +1,116 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '7.0.x'
+    
+    - name: Extract version from tag
+      id: version
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $version = $tag.TrimStart('v')
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "tag=$tag" >> $env:GITHUB_OUTPUT
+        echo "Extracted version: $version from tag: $tag"
+    
+    - name: Update version in project file
+      run: |
+        $version = "${{ steps.version.outputs.version }}"
+        $projectFile = "GH_MCP/GH_MCP/GH_MCP.csproj"
+        $content = Get-Content $projectFile -Raw
+        $content = $content -replace '<Version>.*?</Version>', "<Version>$version</Version>"
+        Set-Content $projectFile $content
+        echo "Updated version to $version in $projectFile"
+    
+    - name: Restore dependencies
+      run: dotnet restore GH_MCP/GH_MCP.sln
+    
+    - name: Build for .NET Framework 4.8 (Primary)
+      run: |
+        dotnet build GH_MCP/GH_MCP.sln --configuration Release --framework net48 --no-restore
+        echo "Primary build completed for net48"
+    
+    - name: Build for .NET 7.0 Windows
+      run: |
+        dotnet build GH_MCP/GH_MCP.sln --configuration Release --framework net7.0-windows --no-restore
+        echo "Build completed for net7.0-windows"
+    
+    - name: Build for .NET 7.0
+      run: |
+        dotnet build GH_MCP/GH_MCP.sln --configuration Release --framework net7.0 --no-restore
+        echo "Build completed for net7.0"
+    
+    - name: Create release directory
+      run: |
+        mkdir release
+        copy GH_MCP\GH_MCP\bin\Release\net48\GH_MCP.gha release\GH_MCP-v${{ steps.version.outputs.version }}-net48.gha
+        copy GH_MCP\GH_MCP\bin\Release\net7.0-windows\GH_MCP.gha release\GH_MCP-v${{ steps.version.outputs.version }}-net7.0-windows.gha
+        copy GH_MCP\GH_MCP\bin\Release\net7.0\GH_MCP.gha release\GH_MCP-v${{ steps.version.outputs.version }}-net7.0.gha
+        copy GH_MCP\GH_MCP\bin\Release\net48\GH_MCP.gha release\GH_MCP.gha
+        echo "Release files prepared"
+    
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        $tag = "${{ steps.version.outputs.tag }}"
+        $prevTag = git describe --tags --abbrev=0 HEAD~1 2>$null
+        if ($LASTEXITCODE -eq 0) {
+          $changes = git log --pretty=format:"- %s" $prevTag..HEAD
+        } else {
+          $changes = git log --pretty=format:"- %s" --max-count=20
+        }
+        
+        $notes = "## Grasshopper MCP Component v${{ steps.version.outputs.version }}`n`n"
+        $notes += "### Downloads`n"
+        $notes += "- **GH_MCP.gha** - Primary build (recommended for most users)`n"
+        $notes += "- **GH_MCP-v${{ steps.version.outputs.version }}-net48.gha** - .NET Framework 4.8 (Rhino 7/8)`n"
+        $notes += "- **GH_MCP-v${{ steps.version.outputs.version }}-net7.0-windows.gha** - .NET 7.0 Windows (Rhino 8)`n"
+        $notes += "- **GH_MCP-v${{ steps.version.outputs.version }}-net7.0.gha** - .NET 7.0 Cross-platform`n`n"
+        $notes += "### Installation`n"
+        $notes += "Copy the appropriate .gha file to your Grasshopper components folder:`n"
+        $notes += "````n"
+        $notes += "%APPDATA%\Grasshopper\Libraries\`n"
+        $notes += "````n`n"
+        $notes += "### Changes in this release:`n"
+        $notes += $changes
+        $notes += "`n`n### Compatibility`n"
+        $notes += "- **Rhino 7**: Use net48 version`n"
+        $notes += "- **Rhino 8 Windows**: Use net7.0-windows version (recommended) or net48`n"
+        $notes += "- **Rhino 8 Mac**: Use net7.0 version"
+        
+        $notes | Out-File -FilePath "release_notes.md" -Encoding UTF8
+        echo "notes<<EOF" >> $env:GITHUB_OUTPUT
+        Get-Content "release_notes.md" | ForEach-Object { echo $_ } >> $env:GITHUB_OUTPUT
+        echo "EOF" >> $env:GITHUB_OUTPUT
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: Grasshopper MCP Component v${{ steps.version.outputs.version }}
+        body: ${{ steps.release_notes.outputs.notes }}
+        files: |
+          release/GH_MCP.gha
+          release/GH_MCP-v${{ steps.version.outputs.version }}-net48.gha
+          release/GH_MCP-v${{ steps.version.outputs.version }}-net7.0-windows.gha
+          release/GH_MCP-v${{ steps.version.outputs.version }}-net7.0.gha
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

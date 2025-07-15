@@ -16,16 +16,18 @@ using System.IO;
 namespace GrasshopperMCP
 {
     /// <summary>
-    /// Grasshopper MCP 組件，用於與 Python 伺服器通信
+    /// Grasshopper MCP component for communicating with Python server
     /// </summary>
     public class GrasshopperMCPComponent : GH_Component
     {
         private static TcpListener listener;
         private static bool isRunning = false;
         private static int grasshopperPort = 8080;
+        private static bool autoStart = true; // Auto-start flag
+        private static bool hasInitialized = false; // Prevent duplicate initialization
         
         /// <summary>
-        /// 初始化 GrasshopperMCPComponent 類的新實例
+        /// Initialize a new instance of GrasshopperMCPComponent class
         /// </summary>
         public GrasshopperMCPComponent()
             : base("Grasshopper MCP", "MCP", "Machine Control Protocol for Grasshopper", "Params", "Util")
@@ -33,111 +35,160 @@ namespace GrasshopperMCP
         }
         
         /// <summary>
-        /// 註冊輸入參數
+        /// Register input parameters
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBooleanParameter("Enabled", "E", "Enable or disable the MCP server", GH_ParamAccess.item, false);
-            pManager.AddIntegerParameter("Port", "P", "Port to listen on", GH_ParamAccess.item, grasshopperPort);
+            pManager.AddBooleanParameter("Enabled", "E", "Enable or disable the MCP server", GH_ParamAccess.item, true);
+            pManager.AddIntegerParameter("Port", "P", "Port to listen on", GH_ParamAccess.item, 8080);
+            pManager.AddBooleanParameter("Auto Start", "A", "Automatically start server when component is added", GH_ParamAccess.item, true);
         }
         
         /// <summary>
-        /// 註冊輸出參數
+        /// Register output parameters
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Status", "S", "Server status", GH_ParamAccess.item);
             pManager.AddTextParameter("LastCommand", "C", "Last received command", GH_ParamAccess.item);
+            pManager.AddTextParameter("Connection Info", "I", "Connection information", GH_ParamAccess.item);
         }
         
         /// <summary>
-        /// 解決組件
+        /// Called when component is initialized
+        /// </summary>
+        protected override void BeforeSolveInstance()
+        {
+            base.BeforeSolveInstance();
+            
+            // Check if auto-start is needed (only on first initialization)
+            if (!hasInitialized && autoStart && !isRunning)
+            {
+                hasInitialized = true;
+                // Delay start to ensure component is fully initialized
+                Task.Delay(500).ContinueWith(_ => 
+                {
+                    RhinoApp.InvokeOnUiThread(() => 
+                    {
+                        if (!isRunning)
+                        {
+                            Start();
+                        }
+                    });
+                });
+            }
+        }
+        
+        /// <summary>
+        /// Solve component
         /// </summary>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            bool enabled = false;
-            int port = grasshopperPort;
+            bool enabled = true;
+            int port = 8080;
+            bool autoStartParam = true;
             
-            // 獲取輸入參數
-            if (!DA.GetData(0, ref enabled)) return;
-            if (!DA.GetData(1, ref port)) return;
+            // Get input parameters, use defaults if not provided
+            DA.GetData(0, ref enabled);
+            DA.GetData(1, ref port);
+            DA.GetData(2, ref autoStartParam);
             
-            // 更新端口
+            // Update global variables
             grasshopperPort = port;
+            autoStart = autoStartParam;
             
-            // 根據啟用狀態啟動或停止伺服器
+            // Start or stop server based on enabled state
             if (enabled && !isRunning)
             {
                 Start();
                 DA.SetData(0, $"Running on port {grasshopperPort}");
+                DA.SetData(2, $"Server active on localhost:{grasshopperPort}");
             }
             else if (!enabled && isRunning)
             {
                 Stop();
                 DA.SetData(0, "Stopped");
+                DA.SetData(2, "Server stopped");
             }
             else if (enabled && isRunning)
             {
                 DA.SetData(0, $"Running on port {grasshopperPort}");
+                DA.SetData(2, $"Server active on localhost:{grasshopperPort}");
             }
             else
             {
                 DA.SetData(0, "Stopped");
+                DA.SetData(2, "Server stopped");
             }
             
-            // 設置最後接收的命令
+            // Set last received command
             DA.SetData(1, LastCommand);
         }
         
         /// <summary>
-        /// 組件 GUID
+        /// Component GUID
         /// </summary>
         public override Guid ComponentGuid => new Guid("12345678-1234-1234-1234-123456789012");
         
         /// <summary>
-        /// 暴露圖標
+        /// Expose icon
         /// </summary>
         protected override Bitmap Icon => null;
         
         /// <summary>
-        /// 最後接收的命令
+        /// Last received command
         /// </summary>
         public static string LastCommand { get; private set; } = "None";
         
         /// <summary>
-        /// 啟動 MCP 伺服器
+        /// Start MCP server
         /// </summary>
         public static void Start()
         {
             if (isRunning) return;
             
-            // 初始化命令註冊表
-            GrasshopperCommandRegistry.Initialize();
-            
-            // 啟動 TCP 監聽器
-            isRunning = true;
-            listener = new TcpListener(IPAddress.Loopback, grasshopperPort);
-            listener.Start();
-            RhinoApp.WriteLine($"GrasshopperMCPBridge started on port {grasshopperPort}.");
-            
-            // 開始接收連接
-            Task.Run(ListenerLoop);
+            try
+            {
+                // Initialize command registry
+                GrasshopperCommandRegistry.Initialize();
+                
+                // Start TCP listener
+                isRunning = true;
+                listener = new TcpListener(IPAddress.Loopback, grasshopperPort);
+                listener.Start();
+                RhinoApp.WriteLine($"GrasshopperMCPBridge started on port {grasshopperPort}.");
+                
+                // Start accepting connections
+                Task.Run(ListenerLoop);
+            }
+            catch (Exception ex)
+            {
+                isRunning = false;
+                RhinoApp.WriteLine($"Failed to start GrasshopperMCPBridge: {ex.Message}");
+            }
         }
         
         /// <summary>
-        /// 停止 MCP 伺服器
+        /// Stop MCP server
         /// </summary>
         public static void Stop()
         {
             if (!isRunning) return;
             
-            isRunning = false;
-            listener.Stop();
-            RhinoApp.WriteLine("GrasshopperMCPBridge stopped.");
+            try
+            {
+                isRunning = false;
+                listener?.Stop();
+                RhinoApp.WriteLine("GrasshopperMCPBridge stopped.");
+            }
+            catch (Exception ex)
+            {
+                RhinoApp.WriteLine($"Error stopping GrasshopperMCPBridge: {ex.Message}");
+            }
         }
         
         /// <summary>
-        /// 監聽循環，處理傳入的連接
+        /// Listener loop to handle incoming connections
         /// </summary>
         private static async Task ListenerLoop()
         {
@@ -145,11 +196,11 @@ namespace GrasshopperMCP
             {
                 while (isRunning)
                 {
-                    // 等待客戶端連接
+                    // Wait for client connection
                     var client = await listener.AcceptTcpClientAsync();
                     RhinoApp.WriteLine("GrasshopperMCPBridge: Client connected.");
                     
-                    // 處理客戶端連接
+                    // Handle client connection
                     _ = Task.Run(() => HandleClient(client));
                 }
             }
@@ -164,9 +215,9 @@ namespace GrasshopperMCP
         }
         
         /// <summary>
-        /// 處理客戶端連接
+        /// Handle client connection
         /// </summary>
-        /// <param name="client">TCP 客戶端</param>
+        /// <param name="client">TCP client</param>
         private static async Task HandleClient(TcpClient client)
         {
             using (client)
@@ -176,39 +227,107 @@ namespace GrasshopperMCP
             {
                 try
                 {
-                    // 讀取命令
+                    // Read command
                     string commandJson = await reader.ReadLineAsync();
                     if (string.IsNullOrEmpty(commandJson))
                     {
                         return;
                     }
                     
-                    // 更新最後接收的命令
+                    // Update last received command
                     LastCommand = commandJson;
                     
-                    // 解析命令
+                    // Parse command
                     Command command = JsonConvert.DeserializeObject<Command>(commandJson);
-                    RhinoApp.WriteLine($"GrasshopperMCPBridge: Received command: {command.Type}");
+                    RhinoApp.WriteLine($"GrasshopperMCPBridge: Received command: {command.Type} with parameters: {JsonConvert.SerializeObject(command.Parameters)}");
                     
-                    // 執行命令
+                    // Execute command
                     Response response = GrasshopperCommandRegistry.ExecuteCommand(command);
                     
-                    // 發送響應
+                    // Send response
                     string responseJson = JsonConvert.SerializeObject(response);
                     await writer.WriteLineAsync(responseJson);
                     
                     RhinoApp.WriteLine($"GrasshopperMCPBridge: Command {command.Type} executed with result: {(response.Success ? "Success" : "Error")}");
+                    if (!response.Success)
+                    {
+                        RhinoApp.WriteLine($"GrasshopperMCPBridge: Error details: {response.Error}");
+                    }
                 }
                 catch (Exception ex)
                 {
                     RhinoApp.WriteLine($"GrasshopperMCPBridge error handling client: {ex.Message}");
                     
-                    // 發送錯誤響應
+                    // Send error response
                     Response errorResponse = Response.CreateError($"Server error: {ex.Message}");
                     string errorResponseJson = JsonConvert.SerializeObject(errorResponse);
                     await writer.WriteLineAsync(errorResponseJson);
                 }
             }
+        }
+        
+        /// <summary>
+        /// Get additional component menu items
+        /// </summary>
+        /// <param name="menu">Menu</param>
+        protected override void AppendAdditionalComponentMenuItems(System.Windows.Forms.ToolStripDropDown menu)
+        {
+            base.AppendAdditionalComponentMenuItems(menu);
+            
+            // Add start/stop menu item
+            var startStopItem = new System.Windows.Forms.ToolStripMenuItem(
+                isRunning ? "Stop Server" : "Start Server",
+                null,
+                (sender, e) => 
+                {
+                    if (isRunning)
+                        Stop();
+                    else
+                        Start();
+                    ExpireLayout();
+                }
+            );
+            menu.Items.Add(startStopItem);
+            
+            // Add separator
+            menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+            
+            // Add port configuration menu item
+            var portItem = new System.Windows.Forms.ToolStripMenuItem(
+                $"Current Port: {grasshopperPort}",
+                null,
+                (sender, e) => 
+                {
+                    // Use simple message box to inform user about port modification
+                    var result = System.Windows.Forms.MessageBox.Show(
+                        $"Current port: {grasshopperPort}\n\nTo change the port, modify the 'Port' input parameter and set 'Enabled' to false, then back to true.",
+                        "Port Configuration",
+                        System.Windows.Forms.MessageBoxButtons.OK,
+                        System.Windows.Forms.MessageBoxIcon.Information
+                    );
+                }
+            );
+            menu.Items.Add(portItem);
+            
+            // Add status information menu item
+            var statusItem = new System.Windows.Forms.ToolStripMenuItem(
+                $"Status: {(isRunning ? "Running" : "Stopped")}",
+                null
+            );
+            statusItem.Enabled = false;
+            menu.Items.Add(statusItem);
+            
+            // Add reset initialization flag menu item
+            var resetItem = new System.Windows.Forms.ToolStripMenuItem(
+                "Reset Auto-Start",
+                null,
+                (sender, e) => 
+                {
+                    hasInitialized = false;
+                    ExpireLayout();
+                }
+            );
+            menu.Items.Add(resetItem);
         }
     }
 }

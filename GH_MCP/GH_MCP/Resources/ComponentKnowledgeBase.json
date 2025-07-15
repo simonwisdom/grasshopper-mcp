@@ -241,6 +241,478 @@
       "outputs": [
         {"name": "Pipe", "type": "Brep", "description": "Pipe geometry"}
       ]
+    },
+    {
+      "name": "List Item",
+      "category": "Sets",
+      "subcategory": "List",
+      "description": "Extracts specific items from lists by index",
+      "inputs": [
+        {"name": "List", "type": "Any", "description": "Input list"},
+        {"name": "Index", "type": "Integer", "description": "Index of item to extract"}
+      ],
+      "outputs": [
+        {"name": "Item", "type": "Any", "description": "Extracted item"}
+      ]
+    },
+    {
+      "name": "Cull Pattern",
+      "category": "Sets",
+      "subcategory": "List",
+      "description": "Removes items from lists based on boolean pattern",
+      "inputs": [
+        {"name": "List", "type": "Any", "description": "Input list"},
+        {"name": "Pattern", "type": "Boolean", "description": "Boolean pattern (True keeps item, False removes)"}
+      ],
+      "outputs": [
+        {"name": "List", "type": "Any", "description": "Filtered list"}
+      ]
+    },
+    {
+      "name": "Graft",
+      "category": "Sets",
+      "subcategory": "Tree",
+      "description": "Converts data tree structure to grafted format",
+      "inputs": [
+        {"name": "Data", "type": "Any", "description": "Input data"}
+      ],
+      "outputs": [
+        {"name": "Data", "type": "Any", "description": "Grafted data"}
+      ]
+    },
+    {
+      "name": "Flatten",
+      "category": "Sets",
+      "subcategory": "Tree",
+      "description": "Flattens data tree structure to single list",
+      "inputs": [
+        {"name": "Data", "type": "Any", "description": "Input data"}
+      ],
+      "outputs": [
+        {"name": "Data", "type": "Any", "description": "Flattened data"}
+      ]
+    },
+    {
+      "name": "Series",
+      "category": "Sets",
+      "subcategory": "Sequence",
+      "description": "Creates a series of numbers with start, step, and count",
+      "inputs": [
+        {"name": "Start", "type": "Number", "description": "Starting value"},
+        {"name": "Step", "type": "Number", "description": "Step size"},
+        {"name": "Count", "type": "Integer", "description": "Number of values"}
+      ],
+      "outputs": [
+        {"name": "Series", "type": "Number", "description": "Series of numbers"}
+      ]
+    },
+    {
+      "name": "Offset",
+      "category": "Curve",
+      "subcategory": "Util",
+      "description": "Creates parallel curves at specified distance",
+      "inputs": [
+        {"name": "Curve", "type": "Curve", "description": "Base curve"},
+        {"name": "Distance", "type": "Number", "description": "Offset distance"},
+        {"name": "Side", "type": "Integer", "description": "Side to offset (0=both, 1=left, 2=right)", "optional": true},
+        {"name": "Corners", "type": "Integer", "description": "Corner type (0=sharp, 1=round, 2=chamfer)", "optional": true}
+      ],
+      "outputs": [
+        {"name": "Curve", "type": "Curve", "description": "Offset curve"}
+      ]
+    },
+    {
+      "name": "Shatter",
+      "category": "Curve",
+      "subcategory": "Division",
+      "description": "Splits curves at parameter points",
+      "inputs": [
+        {"name": "Curve", "type": "Curve", "description": "Curve to split"},
+        {"name": "Parameters", "type": "Number", "description": "Parameter values for splitting"}
+      ],
+      "outputs": [
+        {"name": "Curves", "type": "Curve", "description": "Split curve segments"}
+      ]
+    },
+    {
+      "name": "Join Curves",
+      "category": "Curve",
+      "subcategory": "Util",
+      "description": "Connects curves into continuous curves",
+      "inputs": [
+        {"name": "Curves", "type": "Curve", "description": "Curves to join"},
+        {"name": "Tolerance", "type": "Number", "description": "Joining tolerance", "optional": true}
+      ],
+      "outputs": [
+        {"name": "Curve", "type": "Curve", "description": "Joined curve"}
+      ]
+    },
+    {
+      "name": "Loft",
+      "category": "Surface",
+      "subcategory": "Freeform",
+      "description": "Creates surfaces through curve profiles",
+      "inputs": [
+        {"name": "Profiles", "type": "Curve", "description": "Profile curves"},
+        {"name": "Rails", "type": "Curve", "description": "Rail curves", "optional": true},
+        {"name": "Closed", "type": "Boolean", "description": "Close the loft", "optional": true},
+        {"name": "Type", "type": "Integer", "description": "Loft type (0=normal, 1=loose, 2=straight)", "optional": true}
+      ],
+      "outputs": [
+        {"name": "Surface", "type": "Surface", "description": "Lofted surface"}
+      ]
+    },
+    {
+      "name": "Rotate",
+      "category": "Transform",
+      "subcategory": "Euclidean",
+      "description": "Rotates geometry around an axis",
+      "inputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Geometry to rotate"},
+        {"name": "Angle", "type": "Number", "description": "Rotation angle in radians"},
+        {"name": "Axis", "type": "Line", "description": "Rotation axis"},
+        {"name": "Center", "type": "Point", "description": "Rotation center", "optional": true}
+      ],
+      "outputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Rotated geometry"},
+        {"name": "Transform", "type": "Transform", "description": "Transformation matrix"}
+      ]
+    },
+    {
+      "name": "Polyline",
+      "category": "Curve",
+      "subcategory": "Primitive",
+      "description": "Creates connected line segments",
+      "inputs": [
+        {"name": "Vertices", "type": "Point", "description": "Polyline vertices"}
+      ],
+      "outputs": [
+        {"name": "Polyline", "type": "Curve", "description": "Polyline curve"}
+      ]
+    },
+    {
+      "name": "Ellipse",
+      "category": "Curve",
+      "subcategory": "Primitive",
+      "description": "Creates an ellipse from a plane and major/minor radii",
+      "inputs": [
+        {"name": "Plane", "type": "Plane", "description": "Ellipse plane"},
+        {"name": "Major", "type": "Number", "description": "Major radius"},
+        {"name": "Minor", "type": "Number", "description": "Minor radius"}
+      ],
+      "outputs": [
+        {"name": "Ellipse", "type": "Curve", "description": "Ellipse curve"}
+      ]
+    },
+    {
+      "name": "Polygon",
+      "category": "Curve",
+      "subcategory": "Primitive",
+      "description": "Creates a regular polygon",
+      "inputs": [
+        {"name": "Plane", "type": "Plane", "description": "Polygon plane"},
+        {"name": "Radius", "type": "Number", "description": "Polygon radius"},
+        {"name": "Sides", "type": "Integer", "description": "Number of sides"}
+      ],
+      "outputs": [
+        {"name": "Polygon", "type": "Curve", "description": "Polygon curve"}
+      ]
+    },
+    {
+      "name": "Arc",
+      "category": "Curve",
+      "subcategory": "Primitive",
+      "description": "Creates an arc from center, radius, and angles",
+      "inputs": [
+        {"name": "Center", "type": "Point", "description": "Arc center"},
+        {"name": "Radius", "type": "Number", "description": "Arc radius"},
+        {"name": "Start Angle", "type": "Number", "description": "Start angle in radians"},
+        {"name": "End Angle", "type": "Number", "description": "End angle in radians"}
+      ],
+      "outputs": [
+        {"name": "Arc", "type": "Curve", "description": "Arc curve"}
+      ]
+    },
+    {
+      "name": "Arc SED",
+      "category": "Curve",
+      "subcategory": "Primitive",
+      "description": "Creates an arc from start, end, and direction",
+      "inputs": [
+        {"name": "Start Point", "type": "Point", "description": "Start point"},
+        {"name": "End Point", "type": "Point", "description": "End point"},
+        {"name": "Direction", "type": "Vector", "description": "Arc direction"}
+      ],
+      "outputs": [
+        {"name": "Arc", "type": "Curve", "description": "Arc curve"}
+      ]
+    },
+    {
+      "name": "Evaluate Curve",
+      "category": "Curve",
+      "subcategory": "Analysis",
+      "description": "Evaluates a curve at a parameter value",
+      "inputs": [
+        {"name": "Curve", "type": "Curve", "description": "Curve to evaluate"},
+        {"name": "Parameter", "type": "Number", "description": "Parameter value (0-1)"}
+      ],
+      "outputs": [
+        {"name": "Point", "type": "Point", "description": "Point on curve"},
+        {"name": "Tangent", "type": "Vector", "description": "Tangent vector"},
+        {"name": "Normal", "type": "Vector", "description": "Normal vector"},
+        {"name": "Curvature", "type": "Number", "description": "Curvature value"}
+      ]
+    },
+    {
+      "name": "Point On Curve",
+      "category": "Curve",
+      "subcategory": "Analysis",
+      "description": "Finds the closest point on a curve",
+      "inputs": [
+        {"name": "Curve", "type": "Curve", "description": "Target curve"},
+        {"name": "Point", "type": "Point", "description": "Test point"}
+      ],
+      "outputs": [
+        {"name": "Point", "type": "Point", "description": "Closest point on curve"},
+        {"name": "Parameter", "type": "Number", "description": "Parameter value"}
+      ]
+    },
+    {
+      "name": "Remap Numbers",
+      "category": "Maths",
+      "subcategory": "Domain",
+      "description": "Remaps numbers from one domain to another",
+      "inputs": [
+        {"name": "Source", "type": "Number", "description": "Source values"},
+        {"name": "Source Domain", "type": "Interval", "description": "Source domain"},
+        {"name": "Target Domain", "type": "Interval", "description": "Target domain"}
+      ],
+      "outputs": [
+        {"name": "Target", "type": "Number", "description": "Remapped values"}
+      ]
+    },
+    {
+      "name": "Sweep1",
+      "category": "Surface",
+      "subcategory": "Freeform",
+      "description": "Creates a surface by sweeping a profile along a path",
+      "inputs": [
+        {"name": "Profile", "type": "Curve", "description": "Profile curve"},
+        {"name": "Path", "type": "Curve", "description": "Sweep path"}
+      ],
+      "outputs": [
+        {"name": "Surface", "type": "Surface", "description": "Swept surface"}
+      ]
+    },
+    {
+      "name": "Sweep2",
+      "category": "Surface",
+      "subcategory": "Freeform",
+      "description": "Creates a surface by sweeping a profile along two rails",
+      "inputs": [
+        {"name": "Profile", "type": "Curve", "description": "Profile curve"},
+        {"name": "Rail 1", "type": "Curve", "description": "First rail"},
+        {"name": "Rail 2", "type": "Curve", "description": "Second rail"}
+      ],
+      "outputs": [
+        {"name": "Surface", "type": "Surface", "description": "Swept surface"}
+      ]
+    },
+    {
+      "name": "Revolve",
+      "category": "Surface",
+      "subcategory": "Freeform",
+      "description": "Creates a surface by revolving a curve around an axis",
+      "inputs": [
+        {"name": "Curve", "type": "Curve", "description": "Curve to revolve"},
+        {"name": "Axis", "type": "Line", "description": "Revolve axis"},
+        {"name": "Angle", "type": "Number", "description": "Revolve angle in radians"}
+      ],
+      "outputs": [
+        {"name": "Surface", "type": "Surface", "description": "Revolved surface"}
+      ]
+    },
+    {
+      "name": "Cap Holes",
+      "category": "Surface",
+      "subcategory": "Util",
+      "description": "Caps holes in surfaces or breps",
+      "inputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Geometry with holes"}
+      ],
+      "outputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Capped geometry"}
+      ]
+    },
+    {
+      "name": "Offset Surface",
+      "category": "Surface",
+      "subcategory": "Util",
+      "description": "Creates offset surfaces",
+      "inputs": [
+        {"name": "Surface", "type": "Surface", "description": "Base surface"},
+        {"name": "Distance", "type": "Number", "description": "Offset distance"}
+      ],
+      "outputs": [
+        {"name": "Surface", "type": "Surface", "description": "Offset surface"}
+      ]
+    },
+    {
+      "name": "Fillet",
+      "category": "Curve",
+      "subcategory": "Util",
+      "description": "Creates fillet curves between two curves",
+      "inputs": [
+        {"name": "Curve A", "type": "Curve", "description": "First curve"},
+        {"name": "Curve B", "type": "Curve", "description": "Second curve"},
+        {"name": "Radius", "type": "Number", "description": "Fillet radius"}
+      ],
+      "outputs": [
+        {"name": "Fillet", "type": "Curve", "description": "Fillet curve"}
+      ]
+    },
+    {
+      "name": "Trim",
+      "category": "Curve",
+      "subcategory": "Util",
+      "description": "Trims curves using cutting objects",
+      "inputs": [
+        {"name": "Curve", "type": "Curve", "description": "Curve to trim"},
+        {"name": "Cutter", "type": "Geometry", "description": "Cutting object"}
+      ],
+      "outputs": [
+        {"name": "Curve", "type": "Curve", "description": "Trimmed curve"}
+      ]
+    },
+    {
+      "name": "Mirror",
+      "category": "Transform",
+      "subcategory": "Euclidean",
+      "description": "Mirrors geometry across a plane",
+      "inputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Geometry to mirror"},
+        {"name": "Mirror Plane", "type": "Plane", "description": "Mirror plane"}
+      ],
+      "outputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Mirrored geometry"}
+      ]
+    },
+    {
+      "name": "Scale",
+      "category": "Transform",
+      "subcategory": "Euclidean",
+      "description": "Scales geometry by factors",
+      "inputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Geometry to scale"},
+        {"name": "Factors", "type": "Number", "description": "Scale factors"},
+        {"name": "Center", "type": "Point", "description": "Scale center"}
+      ],
+      "outputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Scaled geometry"}
+      ]
+    },
+    {
+      "name": "Orient",
+      "category": "Transform",
+      "subcategory": "Euclidean",
+      "description": "Orients geometry from reference to target plane",
+      "inputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Geometry to orient"},
+        {"name": "Reference", "type": "Plane", "description": "Reference plane"},
+        {"name": "Target Plane", "type": "Plane", "description": "Target plane"}
+      ],
+      "outputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Oriented geometry"}
+      ]
+    },
+    {
+      "name": "Bounding Box",
+      "category": "Surface",
+      "subcategory": "Primitive",
+      "description": "Creates a bounding box around geometry",
+      "inputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Input geometry"}
+      ],
+      "outputs": [
+        {"name": "Box", "type": "Brep", "description": "Bounding box"}
+      ]
+    },
+    {
+      "name": "Area",
+      "category": "Surface",
+      "subcategory": "Analysis",
+      "description": "Calculates the area of surfaces",
+      "inputs": [
+        {"name": "Surface", "type": "Surface", "description": "Input surface"}
+      ],
+      "outputs": [
+        {"name": "Area", "type": "Number", "description": "Surface area"}
+      ]
+    },
+    {
+      "name": "Volume",
+      "category": "Surface",
+      "subcategory": "Analysis",
+      "description": "Calculates the volume of breps",
+      "inputs": [
+        {"name": "Brep", "type": "Brep", "description": "Input brep"}
+      ],
+      "outputs": [
+        {"name": "Volume", "type": "Number", "description": "Brep volume"}
+      ]
+    },
+    {
+      "name": "Center Box",
+      "category": "Surface",
+      "subcategory": "Primitive",
+      "description": "Creates a box centered on geometry",
+      "inputs": [
+        {"name": "Geometry", "type": "Geometry", "description": "Input geometry"},
+        {"name": "Size", "type": "Number", "description": "Box size"}
+      ],
+      "outputs": [
+        {"name": "Box", "type": "Brep", "description": "Centered box"}
+      ]
+    },
+    {
+      "name": "Dispatch",
+      "category": "Sets",
+      "subcategory": "List",
+      "description": "Dispatches items to different outputs based on pattern",
+      "inputs": [
+        {"name": "List", "type": "Any", "description": "Input list"},
+        {"name": "Pattern", "type": "Boolean", "description": "Dispatch pattern"}
+      ],
+      "outputs": [
+        {"name": "A", "type": "Any", "description": "Items matching pattern"},
+        {"name": "B", "type": "Any", "description": "Items not matching pattern"}
+      ]
+    },
+    {
+      "name": "Shift List",
+      "category": "Sets",
+      "subcategory": "List",
+      "description": "Shifts items in a list",
+      "inputs": [
+        {"name": "List", "type": "Any", "description": "Input list"},
+        {"name": "Shift", "type": "Integer", "description": "Shift amount"},
+        {"name": "Wrap", "type": "Boolean", "description": "Wrap around", "optional": true}
+      ],
+      "outputs": [
+        {"name": "List", "type": "Any", "description": "Shifted list"}
+      ]
+    },
+    {
+      "name": "Flip Matrix",
+      "category": "Sets",
+      "subcategory": "List",
+      "description": "Flips the rows and columns of a matrix",
+      "inputs": [
+        {"name": "Matrix", "type": "Any", "description": "Input matrix"}
+      ],
+      "outputs": [
+        {"name": "Matrix", "type": "Any", "description": "Flipped matrix"}
+      ]
     }
   ],
   "patterns": [

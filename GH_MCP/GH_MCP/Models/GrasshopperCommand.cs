@@ -5,27 +5,27 @@ using Newtonsoft.Json;
 namespace GrasshopperMCP.Models
 {
     /// <summary>
-    /// 表示從 Python 伺服器發送到 Grasshopper 的命令
+    /// Represents a command sent from Python server to Grasshopper
     /// </summary>
     public class Command
     {
         /// <summary>
-        /// 命令類型
+        /// Command type
         /// </summary>
         [JsonProperty("type")]
         public string Type { get; set; }
 
         /// <summary>
-        /// 命令參數
+        /// Command parameters
         /// </summary>
         [JsonProperty("parameters")]
         public Dictionary<string, object> Parameters { get; set; }
 
         /// <summary>
-        /// 創建一個新的命令實例
+        /// Create a new command instance
         /// </summary>
-        /// <param name="type">命令類型</param>
-        /// <param name="parameters">命令參數</param>
+        /// <param name="type">Command type</param>
+        /// <param name="parameters">Command parameters</param>
         public Command(string type, Dictionary<string, object> parameters = null)
         {
             Type = type;
@@ -33,11 +33,11 @@ namespace GrasshopperMCP.Models
         }
 
         /// <summary>
-        /// 獲取指定參數的值
+        /// Get the value of the specified parameter
         /// </summary>
-        /// <typeparam name="T">參數類型</typeparam>
-        /// <param name="name">參數名稱</param>
-        /// <returns>參數值</returns>
+        /// <typeparam name="T">Parameter type</typeparam>
+        /// <param name="name">Parameter name</param>
+        /// <returns>Parameter value</returns>
         public T GetParameter<T>(string name)
         {
             if (Parameters.TryGetValue(name, out object value))
@@ -47,20 +47,20 @@ namespace GrasshopperMCP.Models
                     return typedValue;
                 }
                 
-                // 嘗試轉換
+                // Try conversion
                 try
                 {
                     return (T)Convert.ChangeType(value, typeof(T));
                 }
                 catch
                 {
-                    // 如果是 Newtonsoft.Json.Linq.JObject，嘗試轉換
+                    // If it's Newtonsoft.Json.Linq.JObject, try conversion
                     if (value is Newtonsoft.Json.Linq.JObject jObject)
                     {
                         return jObject.ToObject<T>();
                     }
                     
-                    // 如果是 Newtonsoft.Json.Linq.JArray，嘗試轉換
+                    // If it's Newtonsoft.Json.Linq.JArray, try conversion
                     if (value is Newtonsoft.Json.Linq.JArray jArray)
                     {
                         return jArray.ToObject<T>();
@@ -68,39 +68,39 @@ namespace GrasshopperMCP.Models
                 }
             }
             
-            // 如果無法獲取或轉換參數，返回默認值
+            // If parameter cannot be retrieved or converted, return default value
             return default;
         }
     }
 
     /// <summary>
-    /// 表示從 Grasshopper 發送到 Python 伺服器的響應
+    /// Represents a response sent from Grasshopper to Python server
     /// </summary>
     public class Response
     {
         /// <summary>
-        /// 響應是否成功
+        /// Whether the response is successful
         /// </summary>
         [JsonProperty("success")]
         public bool Success { get; set; }
 
         /// <summary>
-        /// 響應數據
+        /// Response data
         /// </summary>
         [JsonProperty("data")]
         public object Data { get; set; }
 
         /// <summary>
-        /// 錯誤信息，如果有的話
+        /// Error message, if any
         /// </summary>
         [JsonProperty("error")]
         public string Error { get; set; }
 
         /// <summary>
-        /// 創建一個成功的響應
+        /// Create a successful response
         /// </summary>
-        /// <param name="data">響應數據</param>
-        /// <returns>響應實例</returns>
+        /// <param name="data">Response data</param>
+        /// <returns>Response instance</returns>
         public static Response Ok(object data = null)
         {
             return new Response
@@ -111,10 +111,10 @@ namespace GrasshopperMCP.Models
         }
 
         /// <summary>
-        /// 創建一個錯誤的響應
+        /// Create an error response
         /// </summary>
-        /// <param name="errorMessage">錯誤信息</param>
-        /// <returns>響應實例</returns>
+        /// <param name="errorMessage">Error message</param>
+        /// <returns>Response instance</returns>
         public static Response CreateError(string errorMessage)
         {
             return new Response

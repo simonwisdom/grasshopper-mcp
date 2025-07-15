@@ -10,103 +10,112 @@ using System.Linq;
 namespace GH_MCP.Commands
 {
     /// <summary>
-    /// Grasshopper 命令註冊表，用於註冊和執行命令
+    /// Grasshopper command registry for registering and executing commands
     /// </summary>
     public static class GrasshopperCommandRegistry
     {
-        // 命令處理器字典，鍵為命令類型，值為處理命令的函數
+        // Command handler dictionary, key is command type, value is function to handle command
         private static readonly Dictionary<string, Func<Command, object>> CommandHandlers = new Dictionary<string, Func<Command, object>>();
 
         /// <summary>
-        /// 初始化命令註冊表
+        /// Initialize command registry
         /// </summary>
         public static void Initialize()
         {
-            // 註冊幾何命令
+            // Register geometry commands
             RegisterGeometryCommands();
             
-            // 註冊組件命令
+            // Register component commands
             RegisterComponentCommands();
             
-            // 註冊文檔命令
+            // Register document commands
             RegisterDocumentCommands();
             
-            // 註冊意圖命令
+            // Register intent commands
             RegisterIntentCommands();
             
             RhinoApp.WriteLine("GH_MCP: Command registry initialized.");
         }
 
         /// <summary>
-        /// 註冊幾何命令
+        /// Register geometry commands
         /// </summary>
         private static void RegisterGeometryCommands()
         {
-            // 創建點
+            // Create point
             RegisterCommand("create_point", GeometryCommandHandler.CreatePoint);
             
-            // 創建曲線
+            // Create curve
             RegisterCommand("create_curve", GeometryCommandHandler.CreateCurve);
             
-            // 創建圓
+            // Create circle
             RegisterCommand("create_circle", GeometryCommandHandler.CreateCircle);
         }
 
         /// <summary>
-        /// 註冊組件命令
+        /// Register component commands
         /// </summary>
         private static void RegisterComponentCommands()
         {
-            // 添加組件
+            // Add component
             RegisterCommand("add_component", ComponentCommandHandler.AddComponent);
             
-            // 連接組件
+            // Connect components
             RegisterCommand("connect_components", ConnectionCommandHandler.ConnectComponents);
             
-            // 設置組件值
+            // Set component value
             RegisterCommand("set_component_value", ComponentCommandHandler.SetComponentValue);
             
-            // 獲取組件信息
+            // Get component information
             RegisterCommand("get_component_info", ComponentCommandHandler.GetComponentInfo);
+            
+            // Get component warnings
+            RegisterCommand("get_component_warnings", ComponentCommandHandler.GetComponentWarnings);
+            
+            // Get all components
+            RegisterCommand("get_all_components", ComponentCommandHandler.GetAllComponents);
+            
+            // Get all connections
+            RegisterCommand("get_connections", ComponentCommandHandler.GetConnections);
         }
 
         /// <summary>
-        /// 註冊文檔命令
+        /// Register document commands
         /// </summary>
         private static void RegisterDocumentCommands()
         {
-            // 獲取文檔信息
+            // Get document information
             RegisterCommand("get_document_info", DocumentCommandHandler.GetDocumentInfo);
             
-            // 清空文檔
+            // Clear document
             RegisterCommand("clear_document", DocumentCommandHandler.ClearDocument);
             
-            // 保存文檔
+            // Save document
             RegisterCommand("save_document", DocumentCommandHandler.SaveDocument);
             
-            // 加載文檔
+            // Load document
             RegisterCommand("load_document", DocumentCommandHandler.LoadDocument);
         }
 
         /// <summary>
-        /// 註冊意圖命令
+        /// Register intent commands
         /// </summary>
         private static void RegisterIntentCommands()
         {
-            // 創建模式
+            // Create pattern
             RegisterCommand("create_pattern", IntentCommandHandler.CreatePattern);
             
-            // 獲取可用模式
+            // Get available patterns
             RegisterCommand("get_available_patterns", IntentCommandHandler.GetAvailablePatterns);
             
             RhinoApp.WriteLine("GH_MCP: Intent commands registered.");
         }
 
         /// <summary>
-        /// 註冊命令處理器
+        /// Register command handler
         /// </summary>
-        /// <param name="commandType">命令類型</param>
-        /// <param name="handler">處理函數</param>
+        /// <param name="commandType">Command type</param>
+        /// <param name="handler">Handler function</param>
         public static void RegisterCommand(string commandType, Func<Command, object> handler)
         {
             if (string.IsNullOrEmpty(commandType))
@@ -120,10 +129,10 @@ namespace GH_MCP.Commands
         }
 
         /// <summary>
-        /// 執行命令
+        /// Execute command
         /// </summary>
-        /// <param name="command">要執行的命令</param>
-        /// <returns>命令執行結果</returns>
+        /// <param name="command">Command to execute</param>
+        /// <returns>Command execution result</returns>
         public static Response ExecuteCommand(Command command)
         {
             if (command == null)
@@ -154,9 +163,9 @@ namespace GH_MCP.Commands
         }
 
         /// <summary>
-        /// 獲取所有已註冊的命令類型
+        /// Get all registered command types
         /// </summary>
-        /// <returns>命令類型列表</returns>
+        /// <returns>List of command types</returns>
         public static List<string> GetRegisteredCommandTypes()
         {
             return CommandHandlers.Keys.ToList();

@@ -1,0 +1,78 @@
+name: Build Grasshopper MCP Component
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for versioning
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '7.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore GH_MCP/GH_MCP.sln
+    
+    - name: Build for .NET Framework 4.8 (Rhino 7/8)
+      run: |
+        dotnet build GH_MCP/GH_MCP.sln --configuration Release --framework net48 --no-restore
+        echo "Build completed for net48"
+    
+    - name: Build for .NET 7.0 Windows (Rhino 8)
+      run: |
+        dotnet build GH_MCP/GH_MCP.sln --configuration Release --framework net7.0-windows --no-restore
+        echo "Build completed for net7.0-windows"
+    
+    - name: Build for .NET 7.0 (Cross-platform)
+      run: |
+        dotnet build GH_MCP/GH_MCP.sln --configuration Release --framework net7.0 --no-restore
+        echo "Build completed for net7.0"
+    
+    - name: List build outputs
+      run: |
+        echo "=== Build Outputs ==="
+        dir GH_MCP\GH_MCP\bin\Release\net48\*.gha /s
+        dir GH_MCP\GH_MCP\bin\Release\net7.0-windows\*.gha /s
+        dir GH_MCP\GH_MCP\bin\Release\net7.0\*.gha /s
+    
+    - name: Upload .NET Framework 4.8 build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GH_MCP-net48
+        path: GH_MCP/GH_MCP/bin/Release/net48/GH_MCP.gha
+        retention-days: 30
+    
+    - name: Upload .NET 7.0 Windows build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GH_MCP-net7.0-windows
+        path: GH_MCP/GH_MCP/bin/Release/net7.0-windows/GH_MCP.gha
+        retention-days: 30
+    
+    - name: Upload .NET 7.0 build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GH_MCP-net7.0
+        path: GH_MCP/GH_MCP/bin/Release/net7.0/GH_MCP.gha
+        retention-days: 30
+    
+    - name: Build Summary
+      run: |
+        echo "=== Build Summary ==="
+        echo "Build completed successfully for all target frameworks"
+        echo "- .NET Framework 4.8: Compatible with Rhino 7/8"
+        echo "- .NET 7.0 Windows: Compatible with Rhino 8 Windows"
+        echo "- .NET 7.0: Cross-platform compatible"
+        echo ""
+        echo "Artifacts available for download from Actions tab" 

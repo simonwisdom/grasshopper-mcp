@@ -14,31 +14,31 @@ using GH_MCP.Utils;
 namespace GH_MCP.Commands
 {
     /// <summary>
-    /// 處理組件連接相關的命令
+    /// Handler for component connection-related commands
     /// </summary>
     public class ConnectionCommandHandler
     {
         /// <summary>
-        /// 連接兩個組件
+        /// Connect two components
         /// </summary>
-        /// <param name="command">命令對象</param>
-        /// <returns>命令執行結果</returns>
+        /// <param name="command">Command object</param>
+        /// <returns>Command execution result</returns>
         public static object ConnectComponents(Command command)
         {
-            // 獲取源組件 ID
+            // Get source component ID
             if (!command.Parameters.TryGetValue("sourceId", out object sourceIdObj) || sourceIdObj == null)
             {
                 return Response.CreateError("Missing required parameter: sourceId");
             }
             string sourceId = sourceIdObj.ToString();
 
-            // 獲取源參數名稱或索引
+            // Get source parameter name or index
             string sourceParam = null;
             int? sourceParamIndex = null;
             if (command.Parameters.TryGetValue("sourceParam", out object sourceParamObj) && sourceParamObj != null)
             {
                 sourceParam = sourceParamObj.ToString();
-                // 使用模糊匹配獲取標準化的參數名稱
+                // Use fuzzy matching to get standardized parameter name
                 sourceParam = FuzzyMatcher.GetClosestParameterName(sourceParam);
             }
             else if (command.Parameters.TryGetValue("sourceParamIndex", out object sourceParamIndexObj) && sourceParamIndexObj != null)
@@ -49,20 +49,20 @@ namespace GH_MCP.Commands
                 }
             }
 
-            // 獲取目標組件 ID
+            // Get target component ID
             if (!command.Parameters.TryGetValue("targetId", out object targetIdObj) || targetIdObj == null)
             {
                 return Response.CreateError("Missing required parameter: targetId");
             }
             string targetId = targetIdObj.ToString();
 
-            // 獲取目標參數名稱或索引
+            // Get target parameter name or index
             string targetParam = null;
             int? targetParamIndex = null;
             if (command.Parameters.TryGetValue("targetParam", out object targetParamObj) && targetParamObj != null)
             {
                 targetParam = targetParamObj.ToString();
-                // 使用模糊匹配獲取標準化的參數名稱
+                // Use fuzzy matching to get standardized parameter name
                 targetParam = FuzzyMatcher.GetClosestParameterName(targetParam);
             }
             else if (command.Parameters.TryGetValue("targetParamIndex", out object targetParamIndexObj) && targetParamIndexObj != null)
@@ -73,10 +73,10 @@ namespace GH_MCP.Commands
                 }
             }
 
-            // 記錄連接信息
+            // Log connection information
             RhinoApp.WriteLine($"Connecting: sourceId={sourceId}, sourceParam={sourceParam}, targetId={targetId}, targetParam={targetParam}");
 
-            // 創建連接對象
+            // Create connection object
             var connection = new ConnectionPairing
             {
                 Source = new Connection
@@ -93,13 +93,13 @@ namespace GH_MCP.Commands
                 }
             };
 
-            // 檢查連接是否有效
+            // Check if connection is valid
             if (!connection.IsValid())
             {
                 return Response.CreateError("Invalid connection parameters");
             }
 
-            // 在 UI 線程上執行連接操作
+            // Execute connection operation on UI thread
             object result = null;
             Exception exception = null;
 
@@ -107,7 +107,7 @@ namespace GH_MCP.Commands
             {
                 try
                 {
-                    // 獲取當前文檔
+                    // Get current document
                     var doc = Instances.ActiveCanvas?.Document;
                     if (doc == null)
                     {
@@ -115,7 +115,7 @@ namespace GH_MCP.Commands
                         return;
                     }
 
-                    // 查找源組件
+                    // Find source component
                     Guid sourceGuid;
                     if (!Guid.TryParse(connection.Source.ComponentId, out sourceGuid))
                     {
@@ -130,7 +130,7 @@ namespace GH_MCP.Commands
                         return;
                     }
 
-                    // 查找目標組件
+                    // Find target component
                     Guid targetGuid;
                     if (!Guid.TryParse(connection.Target.ComponentId, out targetGuid))
                     {
@@ -145,21 +145,21 @@ namespace GH_MCP.Commands
                         return;
                     }
 
-                    // 檢查源組件是否為輸入參數組件
+                    // Check if source component is an input parameter component
                     if (sourceComponent is IGH_Param && ((IGH_Param)sourceComponent).Kind == GH_ParamKind.input)
                     {
                         exception = new ArgumentException("Source component cannot be an input parameter");
                         return;
                     }
 
-                    // 檢查目標組件是否為輸出參數組件
+                    // Check if target component is an output parameter component
                     if (targetComponent is IGH_Param && ((IGH_Param)targetComponent).Kind == GH_ParamKind.output)
                     {
                         exception = new ArgumentException("Target component cannot be an output parameter");
                         return;
                     }
 
-                    // 獲取源參數
+                    // Get source parameter
                     IGH_Param sourceParameter = GetParameter(sourceComponent, connection.Source, false);
                     if (sourceParameter == null)
                     {
@@ -167,7 +167,7 @@ namespace GH_MCP.Commands
                         return;
                     }
 
-                    // 獲取目標參數
+                    // Get target parameter
                     IGH_Param targetParameter = GetParameter(targetComponent, connection.Target, true);
                     if (targetParameter == null)
                     {
@@ -175,30 +175,30 @@ namespace GH_MCP.Commands
                         return;
                     }
 
-                    // 檢查參數類型相容性
+                    // Check parameter type compatibility
                     if (!AreParametersCompatible(sourceParameter, targetParameter))
                     {
                         exception = new ArgumentException($"Parameters are not compatible: {sourceParameter.GetType().Name} cannot connect to {targetParameter.GetType().Name}");
                         return;
                     }
 
-                    // 移除現有連接（如果需要）
+                    // Remove existing connections (if needed)
                     if (targetParameter.SourceCount > 0)
                     {
                         targetParameter.RemoveAllSources();
                     }
 
-                    // 連接參數
+                    // Connect parameters
                     targetParameter.AddSource(sourceParameter);
                     
-                    // 刷新數據
+                    // Refresh data
                     targetParameter.CollectData();
                     targetParameter.ComputeData();
                     
-                    // 刷新畫布
+                    // Refresh canvas
                     doc.NewSolution(false);
 
-                    // 返回結果
+                    // Return result
                     result = new
                     {
                         success = true,
@@ -220,13 +220,13 @@ namespace GH_MCP.Commands
                 }
             }));
 
-            // 等待 UI 線程操作完成
+            // Wait for UI thread operation to complete
             while (result == null && exception == null)
             {
                 Thread.Sleep(10);
             }
 
-            // 如果有異常，拋出
+            // If there's an exception, throw it
             if (exception != null)
             {
                 return Response.CreateError($"Error executing command 'connect_components': {exception.Message}");
@@ -236,42 +236,42 @@ namespace GH_MCP.Commands
         }
 
         /// <summary>
-        /// 獲取組件的參數
+        /// Get component parameter
         /// </summary>
-        /// <param name="docObj">文檔對象</param>
-        /// <param name="connection">連接信息</param>
-        /// <param name="isInput">是否為輸入參數</param>
-        /// <returns>參數對象</returns>
+        /// <param name="docObj">Document object</param>
+        /// <param name="connection">Connection information</param>
+        /// <param name="isInput">Whether it's an input parameter</param>
+        /// <returns>Parameter object</returns>
         private static IGH_Param GetParameter(IGH_DocumentObject docObj, Connection connection, bool isInput)
         {
-            // 處理參數組件
+            // Handle parameter components
             if (docObj is IGH_Param param)
             {
                 return param;
             }
             
-            // 處理一般組件
+            // Handle general components
             if (docObj is IGH_Component component)
             {
-                // 獲取參數集合
+                // Get parameter collection
                 IList<IGH_Param> parameters = isInput ? component.Params.Input : component.Params.Output;
                 
-                // 檢查參數集合是否為空
+                // Check if parameter collection is empty
                 if (parameters == null || parameters.Count == 0)
                 {
                     return null;
                 }
                 
-                // 如果只有一個參數，直接返回（只有在未指定名稱或索引時）
+                // If there's only one parameter, return it directly (only when name or index is not specified)
                 if (parameters.Count == 1 && string.IsNullOrEmpty(connection.ParameterName) && !connection.ParameterIndex.HasValue)
                 {
                     return parameters[0];
                 }
                 
-                // 按名稱查找參數
+                // Find parameter by name
                 if (!string.IsNullOrEmpty(connection.ParameterName))
                 {
-                    // 精確匹配
+                    // Exact match
                     foreach (var p in parameters)
                     {
                         if (string.Equals(p.Name, connection.ParameterName, StringComparison.OrdinalIgnoreCase))
@@ -280,7 +280,7 @@ namespace GH_MCP.Commands
                         }
                     }
                     
-                    // 模糊匹配
+                    // Fuzzy match
                     foreach (var p in parameters)
                     {
                         if (p.Name.IndexOf(connection.ParameterName, StringComparison.OrdinalIgnoreCase) >= 0)
@@ -289,7 +289,7 @@ namespace GH_MCP.Commands
                         }
                     }
 
-                    // 嘗試匹配 NickName
+                    // Try to match NickName
                     foreach (var p in parameters)
                     {
                         if (string.Equals(p.NickName, connection.ParameterName, StringComparison.OrdinalIgnoreCase))
@@ -299,7 +299,7 @@ namespace GH_MCP.Commands
                     }
                 }
                 
-                // 按索引查找參數
+                // Find parameter by index
                 if (connection.ParameterIndex.HasValue)
                 {
                     int index = connection.ParameterIndex.Value;
@@ -314,28 +314,28 @@ namespace GH_MCP.Commands
         }
 
         /// <summary>
-        /// 檢查兩個參數是否相容
+        /// Check if two parameters are compatible
         /// </summary>
-        /// <param name="source">源參數</param>
-        /// <param name="target">目標參數</param>
-        /// <returns>是否相容</returns>
+        /// <param name="source">Source parameter</param>
+        /// <param name="target">Target parameter</param>
+        /// <returns>Whether they are compatible</returns>
         private static bool AreParametersCompatible(IGH_Param source, IGH_Param target)
         {
-            // 如果參數類型完全匹配，則相容
+            // If parameter types match exactly, they are compatible
             if (source.GetType() == target.GetType())
             {
                 return true;
             }
 
-            // 檢查數據類型是否兼容
+            // Check if data types are compatible
             var sourceType = source.Type;
             var targetType = target.Type;
             
-            // 記錄參數類型信息，用於調試
+            // Log parameter type information for debugging
             RhinoApp.WriteLine($"Parameter types: source={sourceType.Name}, target={targetType.Name}");
             RhinoApp.WriteLine($"Parameter names: source={source.Name}, target={target.Name}");
             
-            // 檢查數字類型的兼容性
+            // Check numeric type compatibility
             bool isSourceNumeric = IsNumericType(source);
             bool isTargetNumeric = IsNumericType(target);
             
@@ -344,7 +344,7 @@ namespace GH_MCP.Commands
                 return true;
             }
 
-            // 曲線和幾何體之間的特殊處理
+            // Special handling between curves and geometry
             bool isSourceCurve = source is Param_Curve;
             bool isTargetCurve = target is Param_Curve;
             bool isSourceGeometry = source is Param_Geometry;
@@ -355,7 +355,7 @@ namespace GH_MCP.Commands
                 return true;
             }
 
-            // 點和向量之間的特殊處理
+            // Special handling between points and vectors
             bool isSourcePoint = source is Param_Point;
             bool isTargetPoint = target is Param_Point;
             bool isSourceVector = source is Param_Vector;
@@ -366,49 +366,49 @@ namespace GH_MCP.Commands
                 return true;
             }
 
-            // 檢查組件的 GUID，確保連接到正確的元件類型
-            // 獲取參數所屬的組件
+            // Check component GUID to ensure connection to correct component type
+            // Get the component that owns the parameter
             var sourceDoc = source.OnPingDocument();
             var targetDoc = target.OnPingDocument();
             
             if (sourceDoc != null && targetDoc != null)
             {
-                // 嘗試查找參數所屬的組件
+                // Try to find the component that owns the parameter
                 IGH_Component sourceComponent = FindComponentForParam(sourceDoc, source);
                 IGH_Component targetComponent = FindComponentForParam(targetDoc, target);
                 
-                // 如果找到了源組件和目標組件
+                // If source and target components are found
                 if (sourceComponent != null && targetComponent != null)
                 {
-                    // 記錄組件信息，用於調試
+                    // Log component information for debugging
                     RhinoApp.WriteLine($"Components: source={sourceComponent.Name}, target={targetComponent.Name}");
                     RhinoApp.WriteLine($"Component GUIDs: source={sourceComponent.ComponentGuid}, target={targetComponent.ComponentGuid}");
                     
-                    // 特殊處理平面到幾何元件的連接
+                    // Special handling for plane to geometry component connections
                     if (IsPlaneComponent(sourceComponent) && RequiresPlaneInput(targetComponent))
                     {
                         RhinoApp.WriteLine("Connecting plane component to geometry component that requires plane input");
                         return true;
                     }
                     
-                    // 如果源是滑塊且目標是圓，確保目標是創建圓的組件
+                    // If source is slider and target is circle, ensure target is circle creation component
                     if (sourceComponent.Name.Contains("Number") && targetComponent.Name.Contains("Circle"))
                     {
-                        // 檢查目標是否為正確的圓元件 (使用 GUID 或描述)
+                        // Check if target is the correct circle component (using GUID or description)
                         if (targetComponent.ComponentGuid.ToString() == "d1028c72-ff86-4057-9eb0-36c687a4d98c")
                         {
-                            // 這是錯誤的圓元件 (參數容器)
+                            // This is the wrong circle component (parameter container)
                             RhinoApp.WriteLine("Detected connection to Circle parameter container instead of Circle component");
                             return false;
                         }
                         if (targetComponent.ComponentGuid.ToString() == "807b86e3-be8d-4970-92b5-f8cdcb45b06b")
                         {
-                            // 這是正確的圓元件 (創建圓)
+                            // This is the correct circle component (create circle)
                             return true;
                         }
                     }
                     
-                    // 如果源是平面且目標是立方體，允許連接
+                    // If source is plane and target is box, allow connection
                     if (IsPlaneComponent(sourceComponent) && targetComponent.Name.Contains("Box"))
                     {
                         RhinoApp.WriteLine("Connecting plane component to box component");
@@ -417,15 +417,15 @@ namespace GH_MCP.Commands
                 }
             }
 
-            // 默認允許連接，讓 Grasshopper 在運行時決定是否相容
+            // Default allow connection, let Grasshopper decide compatibility at runtime
             return true;
         }
 
         /// <summary>
-        /// 檢查參數是否為數字類型
+        /// Check if parameter is numeric type
         /// </summary>
-        /// <param name="param">參數</param>
-        /// <returns>是否為數字類型</returns>
+        /// <param name="param">Parameter</param>
+        /// <returns>Whether it's numeric type</returns>
         private static bool IsNumericType(IGH_Param param)
         {
             return param is Param_Integer || 
@@ -434,18 +434,18 @@ namespace GH_MCP.Commands
         }
 
         /// <summary>
-        /// 查找參數所屬的組件
+        /// Find the component that owns the parameter
         /// </summary>
-        /// <param name="doc">文檔</param>
-        /// <param name="param">參數</param>
-        /// <returns>參數所屬的組件</returns>
+        /// <param name="doc">Document</param>
+        /// <param name="param">Parameter</param>
+        /// <returns>Component that owns the parameter</returns>
         private static IGH_Component FindComponentForParam(GH_Document doc, IGH_Param param)
         {
             foreach (var obj in doc.Objects)
             {
                 if (obj is IGH_Component comp)
                 {
-                    // 檢查輸出參數
+                    // Check output parameters
                     foreach (var outParam in comp.Params.Output)
                     {
                         if (outParam.InstanceGuid == param.InstanceGuid)
@@ -454,7 +454,7 @@ namespace GH_MCP.Commands
                         }
                     }
                     
-                    // 檢查輸入參數
+                    // Check input parameters
                     foreach (var inParam in comp.Params.Input)
                     {
                         if (inParam.InstanceGuid == param.InstanceGuid)
@@ -469,21 +469,21 @@ namespace GH_MCP.Commands
         }
         
         /// <summary>
-        /// 檢查組件是否為平面組件
+        /// Check if component is a plane component
         /// </summary>
-        /// <param name="component">組件</param>
-        /// <returns>是否為平面組件</returns>
+        /// <param name="component">Component</param>
+        /// <returns>Whether it's a plane component</returns>
         private static bool IsPlaneComponent(IGH_Component component)
         {
             if (component == null)
                 return false;
                 
-            // 檢查組件名稱
+            // Check component name
             string name = component.Name.ToLowerInvariant();
             if (name.Contains("plane"))
                 return true;
                 
-            // 檢查 XY Plane 組件的 GUID
+            // Check XY Plane component GUID
             if (component.ComponentGuid.ToString() == "896a1e5e-c2ac-4996-a6d8-5b61157080b3")
                 return true;
                 
@@ -491,16 +491,16 @@ namespace GH_MCP.Commands
         }
         
         /// <summary>
-        /// 檢查組件是否需要平面輸入
+        /// Check if component requires plane input
         /// </summary>
-        /// <param name="component">組件</param>
-        /// <returns>是否需要平面輸入</returns>
+        /// <param name="component">Component</param>
+        /// <returns>Whether it requires plane input</returns>
         private static bool RequiresPlaneInput(IGH_Component component)
         {
             if (component == null)
                 return false;
                 
-            // 檢查組件是否有名為 "Plane" 或 "Base" 的輸入參數
+            // Check if component has input parameters named "Plane" or "Base"
             foreach (var param in component.Params.Input)
             {
                 string paramName = param.Name.ToLowerInvariant();
@@ -508,7 +508,7 @@ namespace GH_MCP.Commands
                     return true;
             }
             
-            // 檢查特定類型的組件
+            // Check specific component types
             string name = component.Name.ToLowerInvariant();
             return name.Contains("box") || 
                    name.Contains("rectangle") || 
